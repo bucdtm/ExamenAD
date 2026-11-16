@@ -361,6 +361,189 @@ try (PreparedStatement pstmt = con.prepareStatement(sqlInsert)) {
 </script>
 </section>
 
+
+<section id="jdbc-mvc-dao" data-tab="jdbc">
+<h2>Arquitectura MVC y Patrón DAO en JDBC</h2>
+<p class="lead">Estructura obligatoria de paquetes, separación estricta de responsabilidades, control de excepciones de negocio y conexión por propiedades.</p>
+
+<div class="note">
+<b>¡Criterio Crucial de Corrección en el Examen!</b><br>
+El examen exige separar el código en paquetes siguiendo el patrón <b>MVC + DAO</b>:
+<ul style="margin:6px 0 2px 20px">
+  <li><b>Paquete <code>interfaz</code>:</b> Es el <b>único</b> lugar donde se permite <code>Scanner</code> y <code>System.out.println()</code>. Captura todas las excepciones con <code>try-catch</code> y muestra mensajes comprensibles al usuario.</li>
+  <li><b>Paquete <code>dao</code>:</b> Contiene la lógica SQL con <code>PreparedStatement</code>. Recibe parámetros o POJOs y devuelve datos. Si se incumple una regla de negocio (fecha fuera de plazo, clave duplicada, nota inválida), <b>debe lanzar una excepción</b> (<code>throw new Exception("motivo")</code>). <b>JAMÁS pongas <code>Scanner</code> ni <code>System.out.println</code> dentro de una clase DAO</b> (penalización severa).</li>
+  <li><b>Paquete <code>pojos</code>:</b> Clases entidad (ej. <code>Alumno</code>, <code>Practica</code>, <code>Entrega</code>) con atributos privados, constructores, getters/setters y <code>toString()</code>.</li>
+  <li><b>Paquete <code>utilies</code>:</b> Clase de utilidad para obtener la conexión mediante <code>propiedades.txt</code>.</li>
+</ul>
+</div>
+
+<script type="text/plain" class="code" data-title="Estructura de paquetes y responsabilidades MVC (Obligatorio en Examen)" data-tags="mvc dao interfaz pojos arquitectura paquetes estructura examen responsabilidades" data-lang="list">
+- Paquete pojos: Alumno, Asignatura, GrupoPractica, Practica, Entrega (clases entidad)
+- Paquete dao: Métodos que reciben parámetros o POJOs, ejecutan PreparedStatements y lanzan excepciones (throw new Exception)
+- Paquete interfaz: Clases ejecutables con main(). Leen datos con Scanner, invocan al DAO y capturan excepciones con try-catch
+- Paquete utilies: Clase ConexionBD con DataSource o DriverManager leyendo fichero propiedades.txt
+- REGLA DE ORO: Ningún método DAO debe incluir System.out.println ni Scanner
+</script>
+
+<script type="text/plain" class="code" data-title="Conexión en paquete utilies con archivo de propiedades (DBCP / DataSource)" data-tags="conexion utilies properties datasource pool basicdatasourcefactory propiedades examen" data-lang="java">
+package utilies;
+
+import java.io.FileInputStream;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.Properties;
+import javax.sql.DataSource;
+import org.apache.commons.dbcp.BasicDataSourceFactory;
+
+public class ConexionBD {
+    private static DataSource dataSource;
+
+    static {
+        try {
+            Properties prop = new Properties();
+            // Ruta habitual requerida en prácticas y examen:
+            prop.load(new FileInputStream("Configuracion/propiedades.txt"));
+            dataSource = BasicDataSourceFactory.createDataSource(prop);
+        } catch (Exception e) {
+            System.err.println("Error crítico al inicializar pool de BD: " + e.getMessage());
+        }
+    }
+
+    public static Connection getConnection() throws SQLException {
+        if (dataSource == null) {
+            throw new SQLException("El DataSource no está inicializado.");
+        }
+        return dataSource.getConnection();
+    }
+}
+</script>
+
+<script type="text/plain" class="code" data-title="Plantilla DAO: método con validación defensiva y throw new Exception" data-tags="dao metodo validacion throw exception negocio regla preparedstatement mvc" data-lang="java">
+package dao;
+
+import java.sql.*;
+import java.util.Date;
+import utilies.ConexionBD;
+
+public class PracticaDAO {
+
+    /**
+     * Valida reglas de negocio y registra la entrega.
+     * Si alguna validación falla, interrumpe el flujo lanzando Exception.
+     */
+    public void registrarEntrega(int idPractica, String nombreAlumno, Date fechaEntrega, double nota) throws Exception {
+        String sqlAlumno = "SELECT id_alumno FROM alumnos WHERE nombre = ?";
+        String sqlPractica = "SELECT fecha_limite FROM practicas WHERE id_practica = ?";
+        String sqlYaEntregada = "SELECT COUNT(*) FROM entregas WHERE id_practica = ? AND id_alumno = ?";
+        String sqlInsert = "INSERT INTO entregas (id_practica, id_alumno, fecha_entrega, nota) VALUES (?, ?, ?, ?)";
+
+        try (Connection con = ConexionBD.getConnection()) {
+
+            // 1. Validar que el alumno existe y obtener su ID
+            int idAlumno = -1;
+            try (PreparedStatement pst = con.prepareStatement(sqlAlumno)) {
+                pst.setString(1, nombreAlumno);
+                try (ResultSet rs = pst.executeQuery()) {
+                    if (rs.next()) {
+                        idAlumno = rs.getInt("id_alumno");
+                    } else {
+                        throw new Exception("El alumno '" + nombreAlumno + "' no existe.");
+                    }
+                }
+            }
+
+            // 2. Validar que la práctica existe y que la entrega está dentro de plazo
+            try (PreparedStatement pst = con.prepareStatement(sqlPractica)) {
+                pst.setInt(1, idPractica);
+                try (ResultSet rs = pst.executeQuery()) {
+                    if (rs.next()) {
+                        Date fechaLimite = rs.getDate("fecha_limite");
+                        // RECUERDA: Uso explícito del método .after()
+                        if (fechaEntrega.after(fechaLimite)) {
+                            throw new Exception("Entrega fuera de plazo. La fecha límite era: " + fechaLimite);
+                        }
+                    } else {
+                        throw new Exception("La práctica con ID " + idPractica + " no existe.");
+                    }
+                }
+            }
+
+            // 3. Validar rango de la nota
+            if (nota < 0.0 || nota > 10.0) {
+                throw new Exception("La nota " + nota + " está fuera de rango (debe estar entre 0.0 y 10.0).");
+            }
+
+            // 4. Validar que no se haya entregado ya con anterioridad
+            try (PreparedStatement pst = con.prepareStatement(sqlYaEntregada)) {
+                pst.setInt(1, idPractica);
+                pst.setInt(2, idAlumno);
+                try (ResultSet rs = pst.executeQuery()) {
+                    if (rs.next() && rs.getInt(1) > 0) {
+                        throw new Exception("El alumno ya había entregado esta práctica previamente.");
+                    }
+                }
+            }
+
+            // 5. Inserción efectiva si todas las validaciones fueron superadas
+            try (PreparedStatement pst = con.prepareStatement(sqlInsert)) {
+                pst.setInt(1, idPractica);
+                pst.setInt(2, idAlumno);
+                pst.setDate(3, new java.sql.Date(fechaEntrega.getTime()));
+                pst.setDouble(4, nota);
+                pst.executeUpdate();
+            }
+        }
+    }
+}
+</script>
+
+<script type="text/plain" class="code" data-title="Plantilla Interfaz: Scanner, invocación al DAO y captura de excepciones" data-tags="interfaz usuario scanner try catch mvc captura excepciones main" data-lang="java">
+package interfaz;
+
+import dao.PracticaDAO;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Scanner;
+
+public class PresentarPracticaMain {
+    public static void main(String[] args) {
+        Scanner tec = new Scanner(System.in);
+        PracticaDAO dao = new PracticaDAO();
+
+        try {
+            System.out.print("Introduce el ID de la práctica: ");
+            int idPractica = tec.nextInt();
+            tec.nextLine(); // Limpiar salto de línea del búfer
+
+            System.out.print("Introduce el nombre del alumno: ");
+            String nombreAlumno = tec.nextLine();
+
+            System.out.print("Introduce la fecha de presentación (dd/MM/yyyy): ");
+            String strFecha = tec.nextLine();
+            SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+            Date fechaEntrega = sdf.parse(strFecha);
+
+            System.out.print("Introduce la nota obtenida: ");
+            double nota = tec.nextDouble();
+            tec.nextLine();
+
+            // Llamada al método del DAO
+            dao.registrarEntrega(idPractica, nombreAlumno, fechaEntrega, nota);
+            System.out.println(">> ¡ÉXITO! Práctica presentada y registrada correctamente.");
+
+        } catch (java.text.ParseException pe) {
+            System.err.println(">> Formato de fecha erróneo. Debe ser dd/MM/yyyy.");
+        } catch (Exception e) {
+            // Se capturan limpiamente tanto las excepciones lanzadas por el DAO como errores SQL
+            System.err.println(">> ERROR AL PRESENTAR: " + e.getMessage());
+        } finally {
+            tec.close();
+        }
+    }
+}
+</script>
+</section>
+
 <section id="jdbc-scroll-updatable" data-tab="jdbc">
 <h2>ResultSets Desplazables y Actualizables (Scrollable & Updatable)</h2>
 <p class="lead">Navegación bidireccional, modificación de filas en vivo e inserción directa sin escribir sentencias SQL INSERT/UPDATE.</p>
@@ -543,6 +726,31 @@ public class SalidaDAO {
     }
 }
 </script>
+
+<script type="text/plain" class="code" data-title="Comparación de fechas con .after() y .before() (Validación de plazos)" data-tags="fechas after before limite plazo fecha entrega java util date compareto" data-lang="java">
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
+SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+
+Date fechaEntrega = sdf.parse("25/11/2026");
+Date fechaLimite = sdf.parse("20/11/2026");
+
+// 1. Comprobar si la entrega es posterior al límite (fuera de plazo)
+if (fechaEntrega.after(fechaLimite)) {
+    throw new Exception("Entrega fuera de plazo: la fecha límite era " + sdf.format(fechaLimite));
+}
+
+// 2. Comprobar si la entrega es anterior o en la misma fecha (a tiempo)
+if (fechaEntrega.before(fechaLimite) || fechaEntrega.equals(fechaLimite)) {
+    System.out.println("Entrega realizada dentro de plazo legal.");
+}
+
+// 3. Alternativa usando compareTo()
+// fechaEntrega.compareTo(fechaLimite) > 0  => Posterior (fuera de plazo)
+// fechaEntrega.compareTo(fechaLimite) <= 0 => En plazo o mismo día
+</script>
+
 </section>
 
 <section id="jdbc-restricciones" data-tab="jdbc">
@@ -1268,6 +1476,59 @@ if (root.isJsonArray()) {
     }
 }
 </script>
+
+<script type="text/plain" class="code" data-title="POJO con Listas/Arrays internos y @SerializedName (Ejemplo Jugador.JSON con hobbies)" data-tags="pojo gson jugador hobby hobbies serializedname genero lista array tilde examen" data-lang="java">
+// Estructura del fichero Jugador.JSON:
+// {
+//   "nombre": "Tom",
+//   "género": "masculino",
+//   "hobby": ["fútbol", "lectura", "natación"]
+// }
+
+import com.google.gson.Gson;
+import com.google.gson.annotations.SerializedName;
+import java.io.FileReader;
+import java.util.List;
+
+// 1. Definición del POJO Jugador
+public class Jugador {
+    private String nombre;
+
+    // Manejo de tildes o nombres distintos entre JSON y atributo Java
+    @SerializedName("género")
+    private String genero;
+
+    // Mapeo automático de un array JSON de Strings a List<String>
+    private List<String> hobby;
+
+    public Jugador() {}
+
+    public String getNombre() { return nombre; }
+    public void setNombre(String nombre) { this.nombre = nombre; }
+
+    public String getGenero() { return genero; }
+    public void setGenero(String genero) { this.genero = genero; }
+
+    public List<String> getHobby() { return hobby; }
+    public void setHobby(List<String> hobby) { this.hobby = hobby; }
+
+    @Override
+    public String toString() {
+        return "Jugador{nombre='" + nombre + "', genero='" + genero + "', hobbies=" + hobby + "}";
+    }
+}
+
+// 2. Lectura y deserialización desde fichero con Gson
+Gson gson = new Gson();
+try (FileReader reader = new FileReader("Jugador.JSON")) {
+    Jugador jugador = gson.fromJson(reader, Jugador.class);
+    System.out.println("Objeto Jugador deserializado correctamente:");
+    System.out.println("- Nombre: " + jugador.getNombre());
+    System.out.println("- Género: " + jugador.getGenero());
+    System.out.println("- Hobbies: " + String.join(", ", jugador.getHobby()));
+}
+</script>
+
 </section>
 
 <section id="json-path" data-tab="json">
@@ -2886,6 +3147,515 @@ public class InsertarProductoInteractivo {
 </script>
 </section>
 
+
+<section id="ejercicios-examen" data-tab="ejercicios">
+<h2>Examen Curso Anterior — Solución Completa (Alquiler, Eventos y Docencia)</h2>
+<p class="lead">Solución íntegra, explicada y lista para ejecutar de los 5 ejercicios del examen de la 1ª Evaluación (MongoDB Alquiler, JSON Eventos, Gson Jugador, JDBC MVC Ocupación y Presentación de Prácticas).</p>
+
+<div class="ex-box">
+  <div class="ex-header">
+    <h3>Examen A1 — (MongoDB) Alquiler: Importación y Consulta de Motos devueltas por Ciudad</h3>
+    <span class="ex-tag">1,5 Puntos — mongoimport + Filters + Projections + countDocuments</span>
+  </div>
+  <div class="ex-body">
+    <div class="ex-statement">
+      <b>Enunciado:</b>
+      1.1) Crea una base de datos <code>Alquiler</code> en tu servidor MongoDB.<br>
+      1.2) Crea una colección <code>Motos</code> y <code>Clientes</code>, e importa los ficheros <code>.json</code> correspondientes con la opción import de MongoDB.<br>
+      Realiza las consultas necesarias para: crear una proyección en formato JSON que muestre la <b>matrícula</b> y la propiedad <b>tipo</b> de las motos devueltas en una <b>ciudad</b> introducida por consola por el usuario, y además mostrar <b>cuántas motos</b> se han devuelto en dicha ciudad.
+    </div>
+    <div class="ex-explain">
+      <b>Procedimiento paso a paso:</b>
+      <ol>
+        <li>Importar las colecciones desde terminal (MongoDB Database Tools):<br>
+            <code>mongoimport --db Alquiler --collection Motos --file Motos.json --jsonArray</code><br>
+            <code>mongoimport --db Alquiler --collection Clientes --file Clientes.json --jsonArray</code></li>
+        <li>Conectar con <code>MongoClients.create("mongodb://localhost:27017")</code> a la BD <code>Alquiler</code>.</li>
+        <li>Pedir la ciudad por consola con <code>Scanner</code>.</li>
+        <li>Filtrar con <code>Filters.eq("ciudad_devolucion", ciudad)</code> (o la propiedad equivalente según el JSON).</li>
+        <li>Proyectar con <code>Projections.fields(Projections.include("matricula", "tipo"), Projections.excludeId())</code>.</li>
+        <li>Contar motos devueltas con <code>colMotos.countDocuments(filtro)</code>.</li>
+        <li>Recorrer el cursor imprimiendo cada documento en formato JSON con <code>doc.toJson()</code>.</li>
+      </ol>
+    </div>
+  </div>
+</div>
+<script type="text/plain" class="code" data-title="Examen A1 — MongoDB Alquiler: Consulta motos devueltas en ciudad y total" data-tags="examen a1 mongodb alquiler motos clientes mongoimport projection countdocuments tojson" data-lang="java">
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoClients;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.Projections;
+import org.bson.Document;
+import org.bson.conversions.Bson;
+import java.util.Scanner;
+
+public class EjercicioA1_MongoDB {
+    public static void main(String[] args) {
+        Scanner tec = new Scanner(System.in);
+        System.out.print("Introduce el nombre de la ciudad de devolución: ");
+        String ciudad = tec.nextLine().trim();
+
+        String uri = "mongodb://localhost:27017";
+        try (MongoClient client = MongoClients.create(uri)) {
+            MongoDatabase db = client.getDatabase("Alquiler");
+            MongoCollection<Document> colMotos = db.getCollection("Motos");
+
+            // Filtro por ciudad de devolución
+            Bson filtro = Filters.eq("ciudad_devolucion", ciudad);
+
+            // Proyección: solo matricula y tipo (excluyendo _id)
+            Bson proyeccion = Projections.fields(
+                Projections.include("matricula", "tipo"),
+                Projections.excludeId()
+            );
+
+            // 1. Mostrar cuántas motos se han devuelto en dicha ciudad
+            long totalDevueltas = colMotos.countDocuments(filtro);
+            System.out.println("
+Total de motos devueltas en " + ciudad + ": " + totalDevueltas);
+
+            // 2. Mostrar listado proyectado en formato JSON
+            System.out.println("Motos devueltas (formato JSON):");
+            boolean hayResultados = false;
+            for (Document doc : colMotos.find(filtro).projection(proyeccion)) {
+                hayResultados = true;
+                System.out.println(doc.toJson());
+            }
+
+            if (!hayResultados) {
+                System.out.println("No se encontraron registros de motos devueltas en " + ciudad);
+            }
+        } catch (Exception e) {
+            System.err.println("Error al consultar MongoDB: " + e.getMessage());
+        }
+    }
+}
+</script>
+
+<div class="ex-box">
+  <div class="ex-header">
+    <h3>Examen A2 — (JSON) Eventos.json: Filtro por música y aforo > 400 con volcado a nuevo JSON</h3>
+    <span class="ex-tag">1,5 Puntos — org.json.simple + JSONParser + FileWriter + Filtrado</span>
+  </div>
+  <div class="ex-body">
+    <div class="ex-statement">
+      <b>Enunciado:</b>
+      A partir del fichero <code>Eventos.json</code>:<br>
+      Muestra un listado de los eventos que sean de tipo <b>música</b> y que tengan un aforo de <b>más de 400</b>. De estos eventos, mostrar su <b>nombre</b> y la <b>fecha</b> del evento.<br>
+      Además, crea un <b>nuevo archivo JSON</b> que contenga esta información que hemos consultado.
+    </div>
+    <div class="ex-explain">
+      <b>Puntos críticos de este ejercicio:</b>
+      <ol>
+        <li><b>Casting seguro de números:</b> Con <code>org.json.simple</code>, los números enteros se leen como <code>Long</code>. Escribir <code>(Integer) ev.get("aforo")</code> provocaría <code>ClassCastException</code>. Debes hacer <code>((Long) ev.get("aforo")).intValue()</code> o comparar directamente contra <code>long</code>.</li>
+        <li><b>Generación del nuevo archivo:</b> Por cada evento coincidente, se crea un <code>JSONObject nuevo</code>, se le añaden solo las claves <code>nombre</code> y <code>fecha</code>, se añade a un <code>JSONArray filtrados</code> y se guarda con <code>FileWriter</code>.</li>
+      </ol>
+    </div>
+  </div>
+</div>
+<script type="text/plain" class="code" data-title="Examen A2 — JSON: Filtrar Eventos.json y generar nuevo archivo filtrado" data-tags="examen a2 json simple jsonparser aforo musica filewriter eventos nuevo archivo" data-lang="java">
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import java.io.FileReader;
+import java.io.FileWriter;
+
+public class EjercicioA2_JSON {
+    public static void main(String[] args) {
+        JSONParser parser = new JSONParser();
+        JSONArray eventosSalida = new JSONArray();
+
+        try (FileReader reader = new FileReader("Eventos.json")) {
+            // El fichero puede contener un JSONArray raíz o un objeto con clave "eventos"
+            Object obj = parser.parse(reader);
+            JSONArray listaEventos = (obj instanceof JSONArray) ? (JSONArray) obj : (JSONArray) ((JSONObject) obj).get("eventos");
+
+            System.out.println("Eventos de música con aforo superior a 400:");
+            System.out.println("----------------------------------------------");
+
+            for (Object item : listaEventos) {
+                JSONObject ev = (JSONObject) item;
+
+                String tipo = (String) ev.get("tipo");
+                // Extracción segura del aforo numérico
+                long aforo = (ev.get("aforo") instanceof Number) ? ((Number) ev.get("aforo")).longValue() : 0L;
+
+                // Condición: tipo música y aforo > 400
+                if (tipo != null && tipo.toLowerCase().contains("música") && aforo > 400) {
+                    String nombre = (String) ev.get("nombre");
+                    String fecha = (String) ev.get("fecha");
+
+                    System.out.println("• " + nombre + " | Fecha: " + fecha + " | Aforo: " + aforo);
+
+                    // Crear objeto limpio para el nuevo archivo JSON
+                    JSONObject eventoFiltrado = new JSONObject();
+                    eventoFiltrado.put("nombre", nombre);
+                    eventoFiltrado.put("fecha", fecha);
+                    eventosSalida.add(eventoFiltrado);
+                }
+            }
+
+            // Guardar la información consultada en un nuevo fichero JSON
+            try (FileWriter file = new FileWriter("EventosFiltrados.json")) {
+                file.write(eventosSalida.toJSONString());
+                file.flush();
+                System.out.println("
+>> ¡Archivo 'EventosFiltrados.json' generado correctamente con " + eventosSalida.size() + " eventos!");
+            }
+
+        } catch (Exception e) {
+            System.err.println("Error procesando Eventos.json: " + e.getMessage());
+        }
+    }
+}
+</script>
+
+<div class="ex-box">
+  <div class="ex-header">
+    <h3>Examen A3 — (Gson) Jugador.JSON: POJO con Array de Hobbies y Deserialización</h3>
+    <span class="ex-tag">0,5 Puntos — Gson + @SerializedName + List&lt;String&gt;</span>
+  </div>
+  <div class="ex-body">
+    <div class="ex-statement">
+      <b>Enunciado:</b>
+      Utilizando el API que nos ofrece Gson. A partir de la creación de un POJO cuya estructura se corresponda a la del documento JSON del archivo <code>Jugador.JSON</code>, haz un programa que a partir de este archivo cree un objeto <code>Jugador</code>.<br>
+      Estructura de <code>Jugador.JSON</code>:
+      <pre>{"nombre":"Tom", "género":"masculino", "hobby":["fútbol", "lectura", "natación"]}</pre>
+    </div>
+    <div class="ex-explain">
+      <b>Claves de resolución:</b>
+      <ol>
+        <li>Atributo con tilde: usar <code>@SerializedName("género") private String genero;</code> para evitar problemas de codificación.</li>
+        <li>Array JSON: se mapea directamente a <code>private List&lt;String&gt; hobby;</code>.</li>
+      </ol>
+    </div>
+  </div>
+</div>
+<script type="text/plain" class="code" data-title="Examen A3 — Gson: POJO Jugador y deserialización desde Jugador.JSON" data-tags="examen a3 gson pojo jugador hobby hobbies serializedname genero" data-lang="java">
+import com.google.gson.Gson;
+import com.google.gson.annotations.SerializedName;
+import java.io.FileReader;
+import java.util.List;
+
+// POJO Jugador
+class Jugador {
+    private String nombre;
+
+    @SerializedName("género")
+    private String genero;
+
+    private List<String> hobby;
+
+    public Jugador() {}
+
+    public String getNombre() { return nombre; }
+    public void setNombre(String nombre) { this.nombre = nombre; }
+
+    public String getGenero() { return genero; }
+    public void setGenero(String genero) { this.genero = genero; }
+
+    public List<String> getHobby() { return hobby; }
+    public void setHobby(List<String> hobby) { this.hobby = hobby; }
+
+    @Override
+    public String toString() {
+        return "Jugador [nombre=" + nombre + ", genero=" + genero + ", hobbies=" + hobby + "]";
+    }
+}
+
+public class EjercicioA3_Gson {
+    public static void main(String[] args) {
+        Gson gson = new Gson();
+        try (FileReader reader = new FileReader("Jugador.JSON")) {
+            Jugador jugador = gson.fromJson(reader, Jugador.class);
+            System.out.println("Objeto Jugador instanciado con éxito:");
+            System.out.println(jugador);
+        } catch (Exception e) {
+            System.err.println("Error al deserializar Jugador.JSON: " + e.getMessage());
+        }
+    }
+}
+</script>
+
+<div class="ex-box">
+  <div class="ex-header">
+    <h3>Examen B31 — (JDBC MVC) Consulta Ocupación de Grupos de Prácticas para una Asignatura</h3>
+    <span class="ex-tag">3,25 Puntos — Arquitectura MVC + PreparedStatement + JOIN + COUNT</span>
+  </div>
+  <div class="ex-body">
+    <div class="ex-statement">
+      <b>Enunciado:</b>
+      Crea un programa que consulte y muestre el estado de ocupación de los grupos de prácticas para una asignatura.<br>
+      El usuario facilita el <b>código de la asignatura</b> (ej. <code>BDA</code>).<br>
+      La consulta buscará y contará en las tablas cuántos alumnos hay matriculados en cada grupo y horario de dicha asignatura:<br>
+      • Si el número de matrículas es <b>menor de 5</b>: mostrar código del grupo, día del horario y <b>ocupación BAJA</b>.<br>
+      • Si el número de matrículas es <b>mayor o igual a 5</b>: mostrar código del grupo, día del horario y <b>ocupación ALTA</b>.<br>
+      <i>Ejemplo: <code>G1-Jueves- ocupación BAJA</code></i><br>
+      Si no se encuentra ningún resultado, avisar de que no se han encontrado matrículas en esa asignatura.<br>
+      <b>Requisito:</b> Implementar clase en paquete <code>interfaz</code> y métodos en el <code>DAO</code> con control de excepciones.
+    </div>
+  </div>
+</div>
+<script type="text/plain" class="code" data-title="Examen B31 — JDBC MVC: Consulta Ocupación Grupos (DTO + DAO + Interfaz)" data-tags="examen b31 jdbc mvc grupos ocupacion baja alta count join dao interfaz" data-lang="java">
+// ==========================================
+// 1. POJO / DTO (en paquete pojos o dao)
+// ==========================================
+package pojos;
+
+public class GrupoOcupacionDTO {
+    private String nombreGrupo;
+    private String diaSemana;
+    private int totalMatriculas;
+
+    public GrupoOcupacionDTO(String nombreGrupo, String diaSemana, int totalMatriculas) {
+        this.nombreGrupo = nombreGrupo;
+        this.diaSemana = diaSemana;
+        this.totalMatriculas = totalMatriculas;
+    }
+
+    public String getNombreGrupo() { return nombreGrupo; }
+    public String getDiaSemana() { return diaSemana; }
+    public int getTotalMatriculas() { return totalMatriculas; }
+
+    public String getNivelOcupacion() {
+        return (totalMatriculas < 5) ? "ocupación BAJA" : "ocupación ALTA";
+    }
+
+    @Override
+    public String toString() {
+        return nombreGrupo + "-" + diaSemana + "- " + getNivelOcupacion() + " (" + totalMatriculas + " matriculados)";
+    }
+}
+
+// ==========================================
+// 2. CLASE DAO (en paquete dao)
+// ==========================================
+package dao;
+
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
+import pojos.GrupoOcupacionDTO;
+import utilies.ConexionBD;
+
+public class GrupoPracticaDAO {
+
+    public List<GrupoOcupacionDTO> consultarOcupacion(String codigoAsignatura) throws Exception {
+        List<GrupoOcupacionDTO> lista = new ArrayList<>();
+
+        String sql = "SELECT g.nombre AS nom_grupo, g.dia_semana, COUNT(m.id_matricula) AS total " +
+                     "FROM asignaturas a " +
+                     "JOIN grupospracticas g ON a.id_asignatura = g.id_asignatura " +
+                     "LEFT JOIN matriculas m ON g.id_grupo = m.id_grupo " +
+                     "WHERE a.codigo = ? " +
+                     "GROUP BY g.id_grupo, g.nombre, g.dia_semana";
+
+        try (Connection con = ConexionBD.getConnection();
+             PreparedStatement pst = con.prepareStatement(sql)) {
+
+            pst.setString(1, codigoAsignatura);
+
+            try (ResultSet rs = pst.executeQuery()) {
+                while (rs.next()) {
+                    String nomGrupo = rs.getString("nom_grupo");
+                    String dia = rs.getString("dia_semana");
+                    int total = rs.getInt("total");
+                    lista.add(new GrupoOcupacionDTO(nomGrupo, dia, total));
+                }
+            }
+        }
+        return lista;
+    }
+}
+
+// ==========================================
+// 3. CLASE INTERFAZ (en paquete interfaz)
+// ==========================================
+package interfaz;
+
+import dao.GrupoPracticaDAO;
+import pojos.GrupoOcupacionDTO;
+import java.util.List;
+import java.util.Scanner;
+
+public class ConsultaOcupacionMain {
+    public static void main(String[] args) {
+        Scanner tec = new Scanner(System.in);
+        GrupoPracticaDAO dao = new GrupoPracticaDAO();
+
+        try {
+            System.out.print("Introduce el código de la asignatura (ej. BDA): ");
+            String codAsig = tec.nextLine().trim();
+
+            List<GrupoOcupacionDTO> resultados = dao.consultarOcupacion(codAsig);
+
+            if (resultados.isEmpty()) {
+                System.out.println("No se han encontrado matrículas ni grupos en la asignatura: " + codAsig);
+            } else {
+                System.out.println("
+Estado de ocupación de los grupos:");
+                for (GrupoOcupacionDTO item : resultados) {
+                    System.out.println("• " + item);
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Error al consultar ocupación: " + e.getMessage());
+        } finally {
+            tec.close();
+        }
+    }
+}
+</script>
+
+<div class="ex-box">
+  <div class="ex-header">
+    <h3>Examen B2 — (JDBC MVC) Presentar una Práctica con todas las Validaciones de Negocio</h3>
+    <span class="ex-tag">3,25 Puntos — Validaciones defensivas + .after() + Control Excepciones</span>
+  </div>
+  <div class="ex-body">
+    <div class="ex-statement">
+      <b>Enunciado:</b>
+      Implementa la operación <b>PRESENTAR UNA PRÁCTICA</b>.<br>
+      El usuario facilitará: código de la práctica, nombre del alumno (suponemos único), fecha de presentación y la nota.<br>
+      <b>Comprobaciones obligatorias antes de insertar en <code>entregas</code>:</b>
+      <ol>
+        <li>La fecha de entrega no puede ser superior a la fecha límite; si lo es, lanzar excepción informando que estás fuera del límite (utilizar método <code>.after()</code>).</li>
+        <li>La nota no puede ser superior a los puntos de la práctica ni estar fuera de rango (0.0 a 10.0); si lo es, lanzar excepción.</li>
+        <li>Si el alumno ya había entregado la práctica anteriormente, lanzar excepción informando de este hecho.</li>
+      </ol>
+      Si todo ha ido bien, insertar la práctica presentada. Gestionar interfaz y DAO con control de excepciones.
+    </div>
+  </div>
+</div>
+<script type="text/plain" class="code" data-title="Examen B2 — JDBC MVC: Operación Presentar Práctica con todas las restricciones" data-tags="examen b2 jdbc mvc presentar practica after limite rango nota duplicada throw exception" data-lang="java">
+// ==========================================
+// 1. CLASE DAO (en paquete dao)
+// ==========================================
+package dao;
+
+import java.sql.*;
+import java.util.Date;
+import utilies.ConexionBD;
+
+public class EntregaPracticaDAO {
+
+    public void presentarPractica(int idPractica, String nombreAlumno, Date fechaPresentacion, double nota) throws Exception {
+        String sqlAlumno = "SELECT id_alumno FROM alumnos WHERE nombre = ?";
+        String sqlPractica = "SELECT fecha_limite FROM practicas WHERE id_practica = ?";
+        String sqlYaEntregada = "SELECT COUNT(*) FROM entregas WHERE id_practica = ? AND id_alumno = ?";
+        String sqlInsert = "INSERT INTO entregas (id_practica, id_alumno, fecha_entrega, nota) VALUES (?, ?, ?, ?)";
+
+        try (Connection con = ConexionBD.getConnection()) {
+
+            // Comprobación 1: Alumno existe
+            int idAlumno = -1;
+            try (PreparedStatement pst = con.prepareStatement(sqlAlumno)) {
+                pst.setString(1, nombreAlumno);
+                try (ResultSet rs = pst.executeQuery()) {
+                    if (rs.next()) {
+                        idAlumno = rs.getInt("id_alumno");
+                    } else {
+                        throw new Exception("El alumno '" + nombreAlumno + "' no existe en la base de datos.");
+                    }
+                }
+            }
+
+            // Comprobación 2: Práctica existe y fecha de entrega <= fecha límite
+            try (PreparedStatement pst = con.prepareStatement(sqlPractica)) {
+                pst.setInt(1, idPractica);
+                try (ResultSet rs = pst.executeQuery()) {
+                    if (rs.next()) {
+                        Date fechaLimite = rs.getDate("fecha_limite");
+                        if (fechaPresentacion.after(fechaLimite)) {
+                            throw new Exception("Estás fuera del límite. La fecha límite de entrega era: " + fechaLimite);
+                        }
+                    } else {
+                        throw new Exception("La práctica con ID " + idPractica + " no existe.");
+                    }
+                }
+            }
+
+            // Comprobación 3: Nota dentro de rango (0.0 a 10.0)
+            if (nota < 0.0 || nota > 10.0) {
+                throw new Exception("La nota (" + nota + ") está fuera de rango. Debe estar entre 0.0 y 10.0.");
+            }
+
+            // Comprobación 4: No haber entregado con anterioridad
+            try (PreparedStatement pst = con.prepareStatement(sqlYaEntregada)) {
+                pst.setInt(1, idPractica);
+                pst.setInt(2, idAlumno);
+                try (ResultSet rs = pst.executeQuery()) {
+                    if (rs.next() && rs.getInt(1) > 0) {
+                        throw new Exception("El alumno '" + nombreAlumno + "' ya había entregado esta práctica con anterioridad.");
+                    }
+                }
+            }
+
+            // Inserción en tabla entregas
+            try (PreparedStatement pst = con.prepareStatement(sqlInsert)) {
+                pst.setInt(1, idPractica);
+                pst.setInt(2, idAlumno);
+                pst.setDate(3, new java.sql.Date(fechaPresentacion.getTime()));
+                pst.setDouble(4, nota);
+                pst.executeUpdate();
+            }
+        }
+    }
+}
+
+// ==========================================
+// 2. CLASE INTERFAZ (en paquete interfaz)
+// ==========================================
+package interfaz;
+
+import dao.EntregaPracticaDAO;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Scanner;
+
+public class PresentarPracticaMain {
+    public static void main(String[] args) {
+        Scanner tec = new Scanner(System.in);
+        EntregaPracticaDAO dao = new EntregaPracticaDAO();
+
+        try {
+            System.out.print("Introduce el ID/código de la práctica: ");
+            int idPractica = tec.nextInt();
+            tec.nextLine(); // Limpiar búfer
+
+            System.out.print("Introduce el nombre del alumno: ");
+            String nombreAlumno = tec.nextLine().trim();
+
+            System.out.print("Introduce la fecha de presentación (dd/MM/yyyy): ");
+            String strFecha = tec.nextLine().trim();
+            SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+            Date fechaPresentacion = sdf.parse(strFecha);
+
+            System.out.print("Introduce la nota obtenida: ");
+            double nota = tec.nextDouble();
+            tec.nextLine();
+
+            // Llamada al método DAO protegido por validaciones
+            dao.presentarPractica(idPractica, nombreAlumno, fechaPresentacion, nota);
+            System.out.println("
+>> ¡ÉXITO! La práctica se ha presentado y guardado correctamente.");
+
+        } catch (java.text.ParseException pe) {
+            System.err.println("
+>> Formato de fecha no válido. Por favor, usa dd/MM/yyyy.");
+        } catch (Exception e) {
+            System.err.println("
+>> NO SE PUDO REGISTRAR LA PRESENTACIÓN: " + e.getMessage());
+        } finally {
+            tec.close();
+        }
+    }
+}
+</script>
+</section>
+
 </main>
 </div>
 
@@ -3092,15 +3862,17 @@ public class InsertarProductoInteractivo {
    ['agg','Agregacion compleja (aggregate)','quien mas|el que mas|suma total|gasto total|promedio|media|mas dinero','En Mongo usa aggregate() con $match, $group, $sort y $limit.',['aggregate','group','accumulators']],
    ['pojo','Mapear a clase POJO','pojo|clase persona|arraylist<|gson\.fromjson|typestring|typetoken','Recuerda que los nombres de los atributos deben coincidir o usar @SerializedName.',['pojo','gson','fromjson']],
    ['fich','Leer o escribir fichero','fichero|archivo|file|leer .*json|guardar .*json|escribir .*json','Usa FileReader para leer y FileWriter con setPrettyPrinting() para guardar.',['fichero','filereader','filewriter']],
-   ['jpath','Consultas con JsonPath','jsonpath|jayway|xpath|filtro rapido','Sintaxis declarativa $[?(@.precio > 50)].nombre.',['jsonpath','jayway']]
+   ['jpath','Consultas con JsonPath','jsonpath|jayway|xpath|filtro rapido','Sintaxis declarativa $[?(@.precio > 50)].nombre.',['jsonpath','jayway']],
+   ['mvc','Arquitectura MVC y DAO','mvc|dao|daogenerico|interfaz|capa|separar|arquitectura|paquete','Separa Scanner/System.out en interfaz y PreparedStatement/throw new Exception en DAO.',['mvc','dao','interfaz','daogenerico']],
+   ['plazo','Comparar fechas (after/before)','after|before|limite|plazo|fuera de plazo|fecha limite|fecha de entrega|presentar','Usa fechaEntrega.after(fechaLimite) para comprobar si ha entregado tarde.',['after','before','fechas','limite','presentar']]
   ];
   CON.forEach(function(c){c.re=new RegExp(c[2],'i'); c.kw=c[4];});
 
   var TECH={
-   jdbc:/\b(sql|mysql|jdbc|tabla|tablas|select|insert|update|delete|where|join|clave (primaria|foranea|ajena)|ciclista|etapa|puerto|maillot|equipo|commit|rollback|transaccion|fechas|timestamp|salida)\b/g,
-   mongodb:/\b(mongo|mongodb|coleccion|colecciones|documento|documentos|find|aggregate|filters|concesionario|persona|personas|coche|coches|ventas|biblioteca|libros|socios|prestamos)\b/g,
-   json:/\b(json|gson|jsonpath|fichero|archivo|array|productos|platos|cocina|pojo|jsonparser|jsonobject|jsonarray)\b/g,
-   ejercicios:/\b(ejercicio|ejercicios|apartado|pregunta|r1|r2|r3|r4|r5|ampliacion)\b/g
+   jdbc:/\b(sql|mysql|jdbc|tabla|tablas|select|insert|update|delete|where|join|clave (primaria|foranea|ajena)|ciclista|etapa|puerto|maillot|equipo|commit|rollback|transaccion|fechas|timestamp|salida|docencia|practica|matricula|asignatura|grupo|entregas|mvc|dao|after|before)\b/g,
+   mongodb:/\b(mongo|mongodb|coleccion|colecciones|documento|documentos|find|aggregate|filters|concesionario|persona|personas|coche|coches|ventas|biblioteca|libros|socios|prestamos|alquiler|motos|clientes)\b/g,
+   json:/\b(json|gson|jsonpath|fichero|archivo|array|productos|platos|cocina|pojo|jsonparser|jsonobject|jsonarray|eventos|jugador|hobby|aforo)\b/g,
+   ejercicios:/\b(ejercicio|ejercicios|apartado|pregunta|r1|r2|r3|r4|r5|ampliacion|examen|b31|b2|a1|a2|a3)\b/g
   };
   var BASE={jdbc:'Plantilla: conexión',mongodb:'Imports + conexión',json:'Lectura rápida con org.json.simple',ejercicios:'r1 — Ciclistas de más de una edad'};
 
