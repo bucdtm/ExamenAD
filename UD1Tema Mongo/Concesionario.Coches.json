@@ -1,0 +1,70 @@
+[{
+  "_id": {
+    "$oid": "652ae937d780d14d0193ff52"
+  },
+  "Model": "Citroen",
+  "Year": 2015,
+  "id_car": 101,
+  "Value": 25000,
+  "Matrícula": "12333A"
+},
+{
+  "_id": {
+    "$oid": "652ae938d780d14d0193ff54"
+  },
+  "Model": "Ford",
+  "Year": 1995,
+  "id_car": 105,
+  "Vallue": 5000,
+  "Mstrícula": "234566B"
+},
+{
+  "_id": {
+    "$oid": "652ae938d780d14d0193ff55"
+  },
+  "Model": "Rolls",
+  "Year": 1950,
+  "id_car": 107,
+  "Value": 15000,
+  "Matrícula": "345677C"
+},
+{
+  "_id": {
+    "$oid": "66e7d82823a610baf0694072"
+  },
+  "Model": "Ford",
+  "id_car": 102,
+  "Value": 1900,
+  "Year": 2020,
+  "Matrícula": "2234567F"
+},
+{
+  "_id": {
+    "$oid": "68e3d323d70133edca49d11d"
+  },
+  "Model": "Ford",
+  "Year": 1993,
+  "id_car": 106,
+  "Value": 900,
+  "Matrícula": "334567G"
+},
+{
+  "_id": {
+    "$oid": "68e3e612d70133edca49d121"
+  },
+  "Model": "Ford",
+  "Year": 2000,
+  "id_car": 104,
+  "Value": 20000,
+  "Matrícula": "123455V"
+},
+{
+  "_id": {
+    "$oid": "68e3ec2cd70133edca49d127"
+  },
+  "Model": "Rolls",
+  "Year": 1960,
+  "id_car": 108,
+  "Value": 22000,
+  "Matrícula": "232323G"
+}]

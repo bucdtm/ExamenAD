@@ -1,0 +1,1512 @@
+<!doctype html>
+<html lang="es" data-tab="jdbc">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chuleta Acceso a Datos</title>
+<style>
+:root{--bg:#f3f5f7;--panel:#fff;--text:#14202b;--muted:#586674;--border:#dbe1e7;--hl:#fde68a;
+ --code-bg:#0f1720;--code-text:#d7e0ea;--code-border:#0f1720;
+ --c:#6f8296;--s:#9fd88f;--n:#f4b46a;--k:#8fb8ff;--t:#7fd6d0;--f:#e8d28a;--a:#d6a1f0;
+ --accent:#1f5fd1;--accent-soft:#e6eefc;--on-accent:#fff}
+html[data-tab=mongodb]{--accent:#0b7a43;--accent-soft:#e2f4ea}
+html[data-tab=json]{--accent:#9a5b00;--accent-soft:#fbefd9}
+@media (prefers-color-scheme:dark){
+:root{--bg:#0d1216;--panel:#141b21;--text:#e6ebf0;--muted:#93a1ad;--border:#27323b;--hl:#6b5200;--code-bg:#0a0f13;--code-border:#27323b;
+ --accent:#6ea2ff;--accent-soft:#17263f;--on-accent:#0d1216}
+html[data-tab=mongodb]{--accent:#4cd08a;--accent-soft:#12291f}
+html[data-tab=json]{--accent:#f2b24c;--accent-soft:#2e2412}}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:128px}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.6 "Segoe UI Variable Text","Segoe UI",system-ui,-apple-system,Roboto,sans-serif}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.top{position:sticky;top:0;z-index:10;background:var(--panel);border-bottom:1px solid var(--border)}
+.bar{max-width:1240px;margin:0 auto;padding:12px 20px 4px;display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.bar h1{font-size:18px;font-weight:700;letter-spacing:-.01em;margin:0;white-space:nowrap}
+.search{position:relative;flex:1;min-width:200px;max-width:560px;margin-left:auto}
+#q{width:100%;padding:9px 38px 9px 14px;border:1px solid var(--border);border-radius:999px;background:var(--bg);color:var(--text);font:inherit}
+#q:focus{outline:2px solid var(--accent);border-color:transparent}
+.search kbd{position:absolute;right:12px;top:50%;transform:translateY(-50%);font:12px ui-monospace,Consolas,monospace;color:var(--muted);border:1px solid var(--border);border-radius:4px;padding:0 6px;pointer-events:none}
+#count{color:var(--muted);font-size:13px;min-width:80px}
+.tabs{max-width:1240px;margin:0 auto;padding:0 12px;display:flex;gap:4px;overflow-x:auto}
+.tabs button{appearance:none;border:0;background:none;color:var(--muted);font:inherit;font-weight:600;font-size:15px;padding:10px 14px 11px;cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap;display:flex;gap:8px;align-items:center}
+.tabs button:hover{color:var(--text)}
+.tabs button[aria-selected=true]{color:var(--text);border-bottom-color:var(--accent)}
+.tabs button.t-jdbc{--tc:#1f5fd1}.tabs button.t-mongodb{--tc:#0b7a43}.tabs button.t-json{--tc:#9a5b00}
+@media (prefers-color-scheme:dark){.tabs button.t-jdbc{--tc:#6ea2ff}.tabs button.t-mongodb{--tc:#4cd08a}.tabs button.t-json{--tc:#f2b24c}}
+.tabs button::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--tc)}
+.tabs small{font-size:12px;font-weight:600;color:var(--muted);background:var(--bg);border:1px solid var(--border);border-radius:999px;padding:0 8px;line-height:18px}
+.tabs button.has small{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+
+.layout{display:flex;gap:32px;max-width:1240px;margin:0 auto;padding:24px 20px 60px}
+nav{width:210px;flex-shrink:0;position:sticky;top:128px;align-self:flex-start;max-height:calc(100vh - 150px);overflow:auto;display:flex;flex-direction:column;gap:2px}
+nav a{padding:6px 12px;color:var(--muted);text-decoration:none;border-left:2px solid var(--border);font-size:14px}
+nav a:hover{color:var(--text)}
+nav a.active{color:var(--text);border-left-color:var(--accent);background:var(--accent-soft);font-weight:600}
+main{flex:1;min-width:0}
+section{margin-bottom:40px}
+section.off,section.hide,.block.hide{display:none}
+section>h2{font-size:24px;font-weight:700;letter-spacing:-.015em;margin:0 0 4px;line-height:1.25}
+section>p.lead{margin:0 0 16px;color:var(--muted);max-width:70ch}
+.block{background:var(--panel);border:1px solid var(--border);border-radius:10px;margin:0 0 16px;overflow:hidden}
+.bh{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 14px;border-left:4px solid var(--accent)}
+.bh h3{margin:0;font-size:15px;font-weight:600;line-height:1.35}
+.copy{border:1px solid var(--border);background:var(--bg);color:var(--text);border-radius:6px;padding:4px 12px;font-weight:600;font-size:13px;font-family:inherit;cursor:pointer;white-space:nowrap}
+.copy:hover{border-color:var(--accent);color:var(--accent)}
+.copy.ok{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+pre{margin:0;padding:14px 16px;background:var(--code-bg);color:var(--code-text);border-top:1px solid var(--code-border);overflow:auto;font:13.5px/1.55 "Cascadia Code","JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;tab-size:4}
+pre .c{color:var(--c);font-style:italic}pre .s{color:var(--s)}pre .n{color:var(--n)}pre .k{color:var(--k)}pre .t{color:var(--t)}pre .f{color:var(--f)}pre .a{color:var(--a)}
+ul.checks{margin:0;padding:6px 18px 12px 34px;list-style:disc}
+ul.checks li{padding:3px 0;max-width:80ch}
+ul.checks li::marker{color:var(--accent)}
+code{font:.9em ui-monospace,Consolas,monospace;background:var(--accent-soft);padding:1px 5px;border-radius:4px}
+.note{background:var(--accent-soft);border-left:4px solid var(--accent);border-radius:6px;padding:10px 14px;margin:0 0 16px;font-size:14.5px;max-width:80ch}
+.note code{background:var(--panel)}
+.chip{display:none;font-size:12px;font-weight:600;margin-left:8px;vertical-align:middle;color:var(--muted)}
+#empty{display:none;padding:32px;border:1px dashed var(--border);border-radius:10px;text-align:center;color:var(--muted)}
+#empty button{margin:8px 4px 0;border:1px solid var(--border);background:var(--panel);color:var(--text);font:inherit;padding:4px 12px;border-radius:999px;cursor:pointer}
+
+.solve-btn{border:0;background:var(--accent);color:var(--on-accent);font-weight:600;font-size:14px;font-family:inherit;padding:8px 16px;border-radius:999px;cursor:pointer;white-space:nowrap}
+.solve-btn[aria-expanded=true]{outline:2px solid var(--accent);outline-offset:2px;background:var(--panel);color:var(--text)}
+#solver{display:none;background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:18px;margin:0 0 28px}
+#solver.open{display:block}
+#solver h2{font-size:18px;margin:0 0 4px}
+#solver .hint{margin:0 0 10px;color:var(--muted);font-size:14px;max-width:70ch}
+#sv-text{width:100%;min-height:130px;resize:vertical;padding:12px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font:inherit}
+.sv-actions{display:flex;gap:8px;margin-top:10px}
+.sv-actions button,.sv-go{border:1px solid var(--border);background:var(--bg);color:var(--text);font-family:inherit;font-size:13.5px;font-weight:600;padding:5px 14px;border-radius:999px;cursor:pointer}
+.sv-actions .primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.sv-go:hover,.sv-actions button:hover{border-color:var(--accent)}
+#sv-out{margin-top:16px}
+.sv-tech{margin:0 0 6px;font-size:15px}
+.sv-part{border-top:1px solid var(--border);padding:14px 0 4px}
+.sv-part blockquote{margin:0 0 8px;color:var(--muted);font-size:14px;border-left:3px solid var(--border);padding-left:10px}
+.sv-chip{display:inline-block;font-size:12.5px;font-weight:600;background:var(--accent-soft);border-radius:999px;padding:1px 10px;margin:0 6px 6px 0}
+.sv-tips{margin:4px 0 8px;padding-left:20px;font-size:14px}
+.sv-go{display:inline-block;margin:0 6px 8px 0;text-align:left}
+.sv-go small{color:var(--muted);font-weight:500;margin-left:6px}
+.flash{outline:3px solid var(--accent);outline-offset:2px}
+@media (max-width:860px){
+ .layout{flex-direction:column;gap:12px;padding:14px 12px 48px}
+ nav{position:static;width:auto;max-height:none;flex-direction:row;overflow-x:auto;gap:6px}
+ nav a{border:1px solid var(--border);border-radius:999px;white-space:nowrap;padding:4px 12px}
+ nav a.active{border-color:var(--accent)}
+ .bar{padding:10px 12px 4px}.bar h1{font-size:16px}
+ html{scroll-padding-top:150px}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="bar">
+    <h1>Chuleta de Acceso a Datos</h1>
+    <div class="search">
+      <input id="q" type="search" placeholder="Buscar: transacción, Filters.gt, sort, JsonPath, rollback…" autocomplete="off" aria-label="Buscar en la chuleta">
+      <kbd>/</kbd>
+    </div>
+    <span id="count" aria-live="polite"></span>
+    <button id="solveBtn" class="solve-btn" type="button" aria-expanded="false" aria-controls="solver">Analizar enunciado</button>
+  </div>
+  <div class="tabs" id="tabs" role="tablist">
+    <button role="tab" data-tab="jdbc" class="t-jdbc">JDBC <small></small></button>
+    <button role="tab" data-tab="mongodb" class="t-mongodb">MongoDB <small></small></button>
+    <button role="tab" data-tab="json" class="t-json">JSON <small></small></button>
+  </div>
+</header>
+<div class="layout">
+<nav id="nav" aria-label="Secciones"></nav>
+<main>
+<div id="solver">
+  <h2>Analizar enunciado</h2>
+  <p class="hint">Pega el enunciado (con los apartados a, b, c… si los tiene). Busca palabras clave y te dice qué piden y qué fragmentos de la chuleta usar. Funciona sin conexión. <kbd style="font:12px ui-monospace,Consolas,monospace;border:1px solid var(--border);border-radius:4px;padding:0 5px;">Ctrl+Enter</kbd> para analizar.</p>
+  <textarea id="sv-text" placeholder="Ej.: a) Pide por teclado un precio y muestra los coches vendidos por más de ese precio, ordenados por fecha…" aria-label="Enunciado del ejercicio"></textarea>
+  <div class="sv-actions"><button class="primary" id="sv-go" type="button">Analizar</button><button id="sv-clear" type="button">Limpiar</button></div>
+  <div id="sv-out" aria-live="polite"></div>
+</div>
+<div id="empty"></div>
+
+<section id="dep-jdbc" data-tab="jdbc">
+<h2>Dependencia Maven</h2>
+<p class="lead">Driver de MySQL para JDBC.</p>
+<script type="text/plain" class="code" data-title="pom.xml — mysql-connector-j" data-tags="maven pom dependency mysql jdbc driver" data-lang="xml">
+<dependencies>
+    <!-- JDBC MySQL -->
+    <dependency>
+        <groupId>com.mysql</groupId>
+        <artifactId>mysql-connector-j</artifactId>
+        <version>8.4.0</version>
+    </dependency>
+</dependencies>
+</script>
+</section>
+
+<section id="jdbc-base" data-tab="jdbc">
+<h2>JDBC (MySQL)</h2>
+<p class="lead">Plantilla básica, consultas con parámetros, INSERT/UPDATE/DELETE y recorrer resultados.</p>
+
+<script type="text/plain" class="code" data-title="Plantilla: conexión + cierre de recursos" data-tags="jdbc conexion connection drivermanager imports finally close">
+import java.sql.*;
+import java.util.Scanner;
+
+Connection con = null;
+PreparedStatement pstmt = null;
+ResultSet rs = null;
+String sql;
+Scanner tec = new Scanner(System.in);
+
+try {
+    con = DriverManager.getConnection("jdbc:mysql://localhost:3306/ciclismo", "root", "");
+
+    // ... aquí las operaciones ...
+
+} catch (SQLException e) {
+    e.printStackTrace();
+} finally {
+    try {
+        if (rs != null) rs.close();
+        if (pstmt != null) pstmt.close();
+        if (con != null) con.close();
+    } catch (SQLException e) {
+        e.printStackTrace();
+    }
+}
+</script>
+
+<script type="text/plain" class="code" data-title="Pedir datos por teclado (Scanner)" data-tags="scanner teclado nextInt nextLine nextDouble input usuario">
+System.out.println("Introduce la edad :");
+Integer vedad = tec.nextInt();
+tec.nextLine();                 // IMPORTANTE: limpiar el salto de línea tras nextInt/nextDouble
+
+System.out.println("Introduce el nombre :");
+String nombre = tec.nextLine();
+
+System.out.println("Introduce el precio :");
+double precio = tec.nextDouble();
+tec.nextLine();
+</script>
+
+<div class="note">Nunca concatenes datos del usuario en el SQL. Usa <code>?</code> y <code>pstmt.setXxx(n, valor)</code> (el índice empieza en 1).</div>
+
+<script type="text/plain" class="code" data-title="SELECT con parámetro (r1: ciclistas de más de X años que han ganado etapa)" data-tags="select preparedstatement setint executequery resultset natural join distinct year curdate r1">
+sql = "select distinct nombre from ciclista natural join etapa"
+    + " where year(curdate())-year(nacimiento)>?";
+pstmt = con.prepareStatement(sql);
+pstmt.setInt(1, vedad);
+rs = pstmt.executeQuery();
+while (rs.next()) {
+    System.out.println(rs.getString(1));      // por posición
+    // System.out.println(rs.getString("nombre")); // o por nombre de columna
+}
+</script>
+
+<script type="text/plain" class="code" data-title="GROUP BY + COUNT (r2: ciclistas por equipo)" data-tags="group by count r2 equipo ciclistas">
+sql = "select count(*), nomeq from ciclista group by nomeq";
+pstmt = con.prepareStatement(sql);
+rs = pstmt.executeQuery();
+while (rs.next()) {
+    System.out.println(rs.getString(2) + " - " + rs.getInt(1));
+}
+</script>
+
+<script type="text/plain" class="code" data-title="HAVING (r3: ciclistas con más de 2 etapas ganadas)" data-tags="having group by count r3 etapas ganadas only_full_group_by">
+// Versión segura con ONLY_FULL_GROUP_BY (todas las columnas del SELECT en el GROUP BY)
+sql = "select c.dorsal, c.nombre, c.nomeq "
+    + "from ciclista c natural join etapa e "
+    + "group by c.dorsal, c.nombre, c.nomeq "
+    + "having count(e.dorsal) > 2";
+pstmt = con.prepareStatement(sql);
+rs = pstmt.executeQuery();
+while (rs.next()) {
+    System.out.println(rs.getInt("dorsal") + " " + rs.getString("nombre") + " - " + rs.getString("nomeq"));
+}
+</script>
+
+<script type="text/plain" class="code" data-title="Comprobar si existe un registro (método reutilizable)" data-tags="existe exists count comprobar metodo helper validar">
+static boolean existe(Connection con, String sql, Object... params) throws SQLException {
+    try (PreparedStatement ps = con.prepareStatement(sql)) {
+        for (int i = 0; i < params.length; i++) {
+            ps.setObject(i + 1, params[i]);
+        }
+        try (ResultSet r = ps.executeQuery()) {
+            return r.next();          // true si hay al menos una fila
+        }
+    }
+}
+
+// Uso:
+if (!existe(con, "select 1 from ciclista where dorsal=?", dorsal)) {
+    System.out.println("El ciclista no existe");
+    return;
+}
+</script>
+
+<script type="text/plain" class="code" data-title="Obtener un único valor (COUNT / SUM / MAX)" data-tags="count sum max coalesce valor unico escalar">
+sql = "select coalesce(sum(km),0) from etapa";   // coalesce evita null si no hay filas
+pstmt = con.prepareStatement(sql);
+rs = pstmt.executeQuery();
+int total = 0;
+if (rs.next()) total = rs.getInt(1);
+</script>
+
+<script type="text/plain" class="code" data-title="INSERT / UPDATE / DELETE (executeUpdate)" data-tags="insert update delete executeupdate filas afectadas">
+sql = "insert into etapa(netapa, km, salida, llegada, dorsal) values (?,?,?,?,?)";
+pstmt = con.prepareStatement(sql);
+pstmt.setInt(1, netapa);
+pstmt.setInt(2, km);
+pstmt.setString(3, salida);
+pstmt.setString(4, llegada);
+pstmt.setInt(5, dorsal);
+int filas = pstmt.executeUpdate();          // nº de filas afectadas
+System.out.println(filas + " fila(s) insertada(s)");
+
+// UPDATE
+sql = "update ciclista set nomeq=? where nomeq=?";
+pstmt = con.prepareStatement(sql);
+pstmt.setString(1, nuevo);
+pstmt.setString(2, viejo);
+pstmt.executeUpdate();
+
+// DELETE
+sql = "delete from equipo where nomeq=?";
+pstmt = con.prepareStatement(sql);
+pstmt.setString(1, viejo);
+pstmt.executeUpdate();
+</script>
+</section>
+
+<section id="jdbc-restricciones" data-tab="jdbc">
+<h2>Controles y restricciones (ciclismo)</h2>
+<p class="lead">Validar antes de insertar. Adapta los nombres de tablas y columnas a tu esquema.</p>
+
+<div class="note">Esquema supuesto: <code>ciclista(dorsal, nombre, nacimiento, nomeq)</code>, <code>etapa(netapa, km, salida, llegada, dorsal)</code>, <code>puerto(nompuerto, altura, categoria, pendiente, netapa, dorsal)</code>, <code>maillot(codigo, tipo, color, premio)</code>, <code>llevar(dorsal, netapa, codigo)</code>, <code>gana(dorsal, premio)</code>. Si tu esquema difiere, cambia los nombres.</div>
+
+<script type="text/plain" class="code" data-title="r4 — Asignar maillot con todos los controles" data-tags="r4 maillot llevar asignar ciclista etapa existe duplicado clave duplicada nombre">
+static void asignarMaillot(Connection con, int dorsal, int netapa, String codigo) throws SQLException {
+    // 1) Existen ciclista, etapa y maillot
+    if (!existe(con, "select 1 from ciclista where dorsal=?", dorsal)) { System.out.println("No existe el ciclista"); return; }
+    if (!existe(con, "select 1 from etapa where netapa=?", netapa))    { System.out.println("No existe la etapa");    return; }
+    if (!existe(con, "select 1 from maillot where codigo=?", codigo))  { System.out.println("No existe el maillot");  return; }
+
+    // 2) Ese maillot ya lo lleva otro en esa etapa -> mostrar el NOMBRE
+    String sql = "select c.nombre from llevar l join ciclista c on c.dorsal=l.dorsal "
+               + "where l.netapa=? and l.codigo=?";
+    try (PreparedStatement ps = con.prepareStatement(sql)) {
+        ps.setInt(1, netapa);
+        ps.setString(2, codigo);
+        try (ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                System.out.println("Ese maillot ya lo lleva " + rs.getString("nombre") + " en la etapa " + netapa);
+                return;
+            }
+        }
+    }
+
+    // 3) El ciclista ya lleva otro maillot en esa etapa
+    if (existe(con, "select 1 from llevar where dorsal=? and netapa=?", dorsal, netapa)) {
+        System.out.println("El ciclista ya lleva otro maillot en esa etapa");
+        return;
+    }
+
+    // 4) Insertar
+    try (PreparedStatement ps = con.prepareStatement("insert into llevar(dorsal, netapa, codigo) values (?,?,?)")) {
+        ps.setInt(1, dorsal);
+        ps.setInt(2, netapa);
+        ps.setString(3, codigo);
+        ps.executeUpdate();
+        System.out.println("Maillot asignado");
+    }
+}
+</script>
+
+<script type="text/plain" class="code" data-title="Capturar clave duplicada / violación de integridad" data-tags="sqlintegrityconstraintviolationexception 1062 duplicate entry clave duplicada catch errorcode sqlstate">
+try {
+    pstmt.executeUpdate();
+} catch (java.sql.SQLIntegrityConstraintViolationException e) {
+    // clave duplicada (1062) o clave ajena inexistente (1452)
+    System.out.println("Error de integridad: " + e.getMessage());
+} catch (SQLException e) {
+    if (e.getErrorCode() == 1062) System.out.println("Clave duplicada");
+    else e.printStackTrace();
+}
+</script>
+
+<script type="text/plain" class="code" data-title="1a — Insertar puerto: etapa existe y máx. 2 puertos de 1ª categoría" data-tags="puerto insertar etapa existe categoria 1 maximo 2 restriccion">
+static void insertarPuerto(Connection con, String nom, int altura, String cat, double pendiente,
+                           int netapa, int dorsal) throws SQLException {
+
+    // etapa existe
+    if (!existe(con, "select 1 from etapa where netapa=?", netapa)) {
+        System.out.println("La etapa no existe. No se puede insertar el puerto.");
+        return;
+    }
+
+    // si el puerto nuevo es de categoría 1, la etapa no puede tener ya 2
+    if (cat.equals("1")) {
+        try (PreparedStatement ps = con.prepareStatement(
+                "select count(*) from puerto where netapa=? and categoria='1'")) {
+            ps.setInt(1, netapa);
+            try (ResultSet rs = ps.executeQuery()) {
+                rs.next();
+                if (rs.getInt(1) >= 2) {
+                    System.out.println("La etapa ya tiene 2 puertos de primera categoría.");
+                    return;
+                }
+            }
+        }
+    }
+
+    try (PreparedStatement ps = con.prepareStatement(
+            "insert into puerto(nompuerto, altura, categoria, pendiente, netapa, dorsal) values (?,?,?,?,?,?)")) {
+        ps.setString(1, nom);
+        ps.setInt(2, altura);
+        ps.setString(3, cat);
+        ps.setDouble(4, pendiente);
+        ps.setInt(5, netapa);
+        ps.setInt(6, dorsal);
+        ps.executeUpdate();
+        System.out.println("Puerto insertado");
+    }
+}
+</script>
+
+<script type="text/plain" class="code" data-title="1b — Insertar etapa: km entre 100 y 300 y total vuelta ≤ 1500" data-tags="etapa km 100 300 1500 suma total restriccion insertar">
+static void insertarEtapa(Connection con, int netapa, int km, String salida, String llegada, int dorsal) throws SQLException {
+    if (km < 100 || km > 300) {
+        System.out.println("No se puede insertar: los km deben estar entre 100 y 300");
+        return;
+    }
+    int total = 0;
+    try (PreparedStatement ps = con.prepareStatement("select coalesce(sum(km),0) from etapa");
+         ResultSet rs = ps.executeQuery()) {
+        if (rs.next()) total = rs.getInt(1);
+    }
+    if (total + km > 1500) {
+        System.out.println("No se puede insertar: la vuelta superaría los 1500 km (llevas " + total + ")");
+        return;
+    }
+    try (PreparedStatement ps = con.prepareStatement(
+            "insert into etapa(netapa, km, salida, llegada, dorsal) values (?,?,?,?,?)")) {
+        ps.setInt(1, netapa);
+        ps.setInt(2, km);
+        ps.setString(3, salida);
+        ps.setString(4, llegada);
+        ps.setInt(5, dorsal);
+        ps.executeUpdate();
+        System.out.println("Etapa insertada");
+    }
+}
+</script>
+
+<div class="note">⚠️ Ojo con el enunciado de 1c: los rangos se solapan (1000–1500 → cat 1; 800–1000 → cat 2; «menos de 1000» → cat 3). Lo lógico es que cat 3 sea <b>menos de 800</b>. Verifícalo con tu profe; abajo lo implemento así.</div>
+
+<script type="text/plain" class="code" data-title="1c — Categoría automática según altura" data-tags="categoria automatica altura puerto E 1 2 3">
+static String categoriaPorAltura(int altura) {
+    if (altura > 1500)  return "E";
+    if (altura >= 1000) return "1";
+    if (altura >= 800)  return "2";
+    return "3";                      // < 800
+}
+
+// Uso al insertar el puerto:
+String cat = categoriaPorAltura(altura);
+</script>
+
+<script type="text/plain" class="code" data-title="2 — Actualizar tabla gana con el total de premios por ciclista" data-tags="gana premios maillot suma total update insert on duplicate key replace into">
+// Opción A: una sola sentencia SQL (necesita PK/UNIQUE en gana.dorsal)
+sql = "insert into gana(dorsal, premio) "
+    + "select l.dorsal, sum(m.premio) from llevar l join maillot m on m.codigo = l.codigo "
+    + "group by l.dorsal "
+    + "on duplicate key update premio = values(premio)";
+pstmt = con.prepareStatement(sql);
+pstmt.executeUpdate();
+
+// Opción B: recorrer y actualizar uno a uno
+String q = "select l.dorsal, sum(m.premio) from llevar l join maillot m on m.codigo = l.codigo group by l.dorsal";
+try (PreparedStatement ps = con.prepareStatement(q);
+     ResultSet r = ps.executeQuery();
+     PreparedStatement up = con.prepareStatement("update gana set premio=? where dorsal=?");
+     PreparedStatement in = con.prepareStatement("insert into gana(dorsal, premio) values (?,?)")) {
+    while (r.next()) {
+        int dorsal = r.getInt(1);
+        double total = r.getDouble(2);
+        up.setDouble(1, total);
+        up.setInt(2, dorsal);
+        if (up.executeUpdate() == 0) {      // no existía -> insertar
+            in.setInt(1, dorsal);
+            in.setDouble(2, total);
+            in.executeUpdate();
+        }
+    }
+}
+</script>
+</section>
+
+<section id="jdbc-transacciones" data-tab="jdbc">
+<h2>Transacciones</h2>
+<p class="lead">Todo o nada: <code>setAutoCommit(false)</code> → <code>commit()</code> / <code>rollback()</code>.</p>
+
+<script type="text/plain" class="code" data-title="Patrón general de transacción" data-tags="transaccion setautocommit commit rollback savepoint">
+try {
+    con.setAutoCommit(false);          // inicia la transacción
+
+    // ... varias operaciones ...
+
+    con.commit();                      // todo OK
+} catch (SQLException e) {
+    try { if (con != null) con.rollback(); } catch (SQLException ex) { ex.printStackTrace(); }
+    System.out.println("Operación cancelada: " + e.getMessage());
+} finally {
+    try { if (con != null) con.setAutoCommit(true); } catch (SQLException e) { e.printStackTrace(); }
+}
+</script>
+
+<script type="text/plain" class="code" data-title="r5 — Fusión de equipos (absorbente + absorbido)" data-tags="r5 fusion equipos transaccion absorber ciclista coche representante delete update rollback">
+static void fusionarEquipos(Connection con, String absorbente, String absorbido) {
+    try {
+        con.setAutoCommit(false);
+
+        if (!existe(con, "select 1 from equipo where nomeq=?", absorbente)
+         || !existe(con, "select 1 from equipo where nomeq=?", absorbido)) {
+            System.out.println("Alguno de los equipos no existe");
+            con.rollback();
+            return;
+        }
+
+        String[] sqls = {
+            "update ciclista      set nomeq=? where nomeq=?",
+            "update coche         set nomeq=? where nomeq=?",
+            "update representante set nomeq=? where nomeq=?"
+        };
+        for (String s : sqls) {
+            try (PreparedStatement ps = con.prepareStatement(s)) {
+                ps.setString(1, absorbente);
+                ps.setString(2, absorbido);
+                ps.executeUpdate();
+            }
+        }
+        try (PreparedStatement ps = con.prepareStatement("delete from equipo where nomeq=?")) {
+            ps.setString(1, absorbido);
+            ps.executeUpdate();
+        }
+
+        con.commit();
+        System.out.println("Fusión realizada");
+    } catch (SQLException e) {
+        try { con.rollback(); } catch (SQLException ex) { ex.printStackTrace(); }
+        System.out.println("Fusión cancelada (rollback): " + e.getMessage());
+    } finally {
+        try { con.setAutoCommit(true); } catch (SQLException e) { e.printStackTrace(); }
+    }
+}
+</script>
+</section>
+
+<section id="errores-jdbc" data-tab="jdbc">
+<h2>Errores típicos</h2>
+<p class="lead">Lo que más suele fallar en estos ejercicios.</p>
+<script type="text/plain" class="code" data-title="Checklist rápido" data-tags="errores trampas checklist problemas" data-lang="list">
+- Después de nextInt()/nextDouble() falta tec.nextLine() -> el siguiente nextLine() lee vacío.
+- Índices de setXxx y getXxx empiezan en 1.
+- GROUP BY con columnas que no están en el SELECT/GROUP BY -> error con ONLY_FULL_GROUP_BY.
+- Si haces setAutoCommit(false), acuérdate de commit() o no se guarda nada.
+- Cierra rs, pstmt y con (o usa try-with-resources).
+</script>
+</section>
+
+<section id="dep-mongo" data-tab="mongodb">
+<h2>Puesta a punto</h2>
+<p class="lead">Driver de Java e importación de las colecciones de ejemplo.</p>
+<script type="text/plain" class="code" data-title="pom.xml — mongodb-driver-sync" data-tags="maven pom dependency mongodb driver" data-lang="xml">
+<dependencies>
+    <!-- MongoDB driver síncrono -->
+    <dependency>
+        <groupId>org.mongodb</groupId>
+        <artifactId>mongodb-driver-sync</artifactId>
+        <version>5.1.0</version>
+    </dependency>
+</dependencies>
+</script>
+<script type="text/plain" class="code" data-title="mongoimport — importar colecciones (Concesionario)" data-tags="mongoimport importar json concesionario consola" data-lang="shell">
+cd tu_ruta\mongodb-database-tools-windows-x86_64-100.18.0\...\bin
+
+mongoimport --db Concesionario --collection Personas --file tu_ruta\Concesionario\Personas.json --jsonArray
+mongoimport --db Concesionario --collection Coches   --file tu_ruta\Concesionario\Coches.json   --jsonArray
+mongoimport --db Concesionario --collection Ventas   --file tu_ruta\Concesionario\Ventas.json   --jsonArray
+</script>
+</section>
+
+<section id="mongo-driver" data-tab="mongodb">
+<h2>MongoDB (driver Java)</h2>
+<p class="lead">Conexión, filtros, proyecciones, ordenación, agregaciones y escritura.</p>
+
+<script type="text/plain" class="code" data-title="Imports + conexión" data-tags="mongo conexion mongoclients getdatabase getcollection imports close">
+import org.bson.Document;
+import org.bson.conversions.Bson;
+import com.mongodb.client.*;
+import com.mongodb.client.model.*;
+import java.util.*;
+
+MongoClient mongoCliente = null;
+try {
+    mongoCliente = MongoClients.create();                       // localhost:27017
+    // mongoCliente = MongoClients.create("mongodb://localhost:27017");
+    MongoDatabase bd = mongoCliente.getDatabase("Concesionario");
+    MongoCollection<Document> colCoches   = bd.getCollection("Coches");
+    MongoCollection<Document> colPersonas = bd.getCollection("Personas");
+    MongoCollection<Document> colVentas   = bd.getCollection("Ventas");
+
+    // ... consultas ...
+
+} catch (Exception e) {
+    e.printStackTrace();
+} finally {
+    if (mongoCliente != null) mongoCliente.close();
+}
+</script>
+
+<div class="note">Antes de programar cualquier consulta, mira la estructura real: <code>System.out.println(col.find().first().toJson());</code>. Los nombres de campo (<code>matricula</code>, <code>propietario</code>, <code>fechaVenta</code>…) y los tipos (String vs Integer) deben coincidir exactamente.</div>
+
+<script type="text/plain" class="code" data-title="find: uno, varios, recorrer con cursor" data-tags="find first iterator cursor foreach recorrer tojson mongocursor">
+Bson filtro = Filters.eq("model", "Rolls");
+
+// El primero (puede ser null -> comprobar)
+Document d = colCoches.find(filtro).first();
+if (d != null) System.out.println(d.toJson());
+
+// Todos, con for-each
+for (Document doc : colCoches.find(filtro)) {
+    System.out.println(doc.toJson());
+}
+
+// Todos, con cursor explícito
+MongoCursor<Document> cursor = colCoches.find(filtro).iterator();
+try {
+    while (cursor.hasNext()) {
+        System.out.println(cursor.next().toJson());
+    }
+} finally {
+    cursor.close();
+}
+
+// Toda la colección
+colCoches.find().forEach(x -> System.out.println(x.toJson()));
+</script>
+
+<script type="text/plain" class="code" data-title="Filters: operadores más usados" data-tags="filters eq ne gt gte lt lte and or in nin regex exists elemmatch not size filtros">
+Filters.eq("city", "London")
+Filters.ne("city", "London")
+Filters.gt("precio", 20000)              // >
+Filters.gte("precio", 20000)             // >=
+Filters.lt("precio", 20000)              // <
+Filters.lte("precio", 20000)             // <=
+Filters.and(Filters.eq("nombre", "María"), Filters.eq("apellidos", "López Martínez"))
+Filters.or(Filters.eq("model", "Rolls"), Filters.eq("model", "Audi"))
+Filters.in("model", "Rolls", "Audi")
+Filters.nin("model", "Rolls", "Audi")
+Filters.regex("nombre", "^Mar")          // empieza por Mar
+Filters.regex("nombre", "mar", "i")      // contiene, sin distinguir mayúsculas
+Filters.exists("revisiones")
+Filters.size("revisiones", 2)            // array con 2 elementos
+Filters.elemMatch("revisiones", Filters.gt("km", 10000))   // algún elemento del array cumple
+Filters.eq("libro.isbn", "123")          // campo dentro de documento embebido (notación punto)
+</script>
+
+<script type="text/plain" class="code" data-title="Proyección + orden + límite" data-tags="projection projections include exclude excludeid sort sorts ascending descending limit skip">
+MongoCursor<Document> c = colVentas.find(Filters.eq("comprador", "María"))
+        .projection(Projections.fields(
+                Projections.include("matricula", "fechaVenta"),
+                Projections.excludeId()))                    // quitar _id
+        .sort(Sorts.ascending("fechaVenta"))                 // Sorts.descending(...) para inverso
+        .limit(10)
+        .iterator();
+while (c.hasNext()) System.out.println(c.next().toJson());
+
+// Varios criterios de orden
+Sorts.orderBy(Sorts.descending("precio"), Sorts.ascending("nombre"))
+</script>
+
+<script type="text/plain" class="code" data-title="Leer campos, documentos embebidos y arrays" data-tags="get getstring getinteger getdouble document embebido array list casting arraylist nested">
+Document doc = colCoches.find(filtro).first();
+
+String matricula = doc.getString("matricula");
+Integer year     = doc.getInteger("year");
+Double precio    = doc.getDouble("precio");
+
+// Documento embebido
+Document socio = (Document) doc.get("socio");
+// o: doc.get("socio", Document.class);
+
+// Array de documentos
+List<Document> revisiones = doc.getList("revisiones", Document.class);
+for (Document r : revisiones) {
+    System.out.println(r.get("fecha"));
+}
+
+// Fechas: si está guardada como Date
+java.util.Date fecha = doc.getDate("fechaVenta");
+</script>
+
+<div class="note">Trampa típica (ejemplo Biblioteca): <code>num_socio</code> es String en una colección y <code>Num_socio</code> es Integer en otra. Convierte con <code>Integer.parseInt(...)</code> antes de filtrar, o no encontrará nada. Y comprueba siempre que <code>first()</code> no sea <code>null</code> antes de usarlo.</div>
+
+<script type="text/plain" class="code" data-title="Ejercicio 1 — Matrícula → nombre, apellidos del propietario y año" data-tags="matricula propietario coche persona buscar relacionar colecciones concesionario">
+System.out.println("Matrícula:");
+String mat = tec.nextLine();
+
+Document coche = colCoches.find(Filters.eq("matricula", mat)).first();
+if (coche == null) {
+    System.out.println("No existe ese coche");
+} else {
+    // Adapta: cómo se relaciona el coche con la persona (dni, _id, nombre embebido...)
+    String dni = coche.getString("propietario");
+    Document p = colPersonas.find(Filters.eq("dni", dni)).first();
+    System.out.println(p.getString("nombre") + " " + p.getString("apellidos")
+            + " - año " + coche.get("year"));
+}
+</script>
+
+<script type="text/plain" class="code" data-title="Ejercicio 2 — Persona María López Martínez y sus ventas ordenadas" data-tags="maria lopez martinez ventas fechaventa proyeccion sort persona existe">
+Document p = colPersonas.find(Filters.and(
+        Filters.eq("nombre", "María"),
+        Filters.eq("apellidos", "López Martínez"))).first();
+
+if (p == null) {
+    System.out.println("La persona no existe");
+} else {
+    MongoCursor<Document> c = colVentas.find(Filters.eq("comprador", p.get("dni")))   // adapta el campo
+            .projection(Projections.fields(
+                    Projections.include("matricula", "fechaVenta"),
+                    Projections.excludeId()))
+            .sort(Sorts.ascending("fechaVenta"))
+            .iterator();
+    if (!c.hasNext()) System.out.println("No tiene ventas");
+    while (c.hasNext()) System.out.println(c.next().toJson());
+}
+</script>
+
+<script type="text/plain" class="code" data-title="Ejercicio 3 — Coches vendidos por más de un precio introducido" data-tags="precio superior gt usuario ventas json tojson coches vendidos">
+System.out.println("Precio mínimo:");
+double minimo = tec.nextDouble();
+tec.nextLine();
+
+for (Document v : colVentas.find(Filters.gt("precio", minimo))) {
+    // Si el coche está referenciado por matrícula, recupera su documento completo:
+    Document coche = colCoches.find(Filters.eq("matricula", v.getString("matricula"))).first();
+    System.out.println(coche.toJson());
+}
+</script>
+
+<script type="text/plain" class="code" data-title="Ejercicio 4 — Coches 'Rolls': fechas de revisiones y comprador si se vendió" data-tags="rolls model revisiones fecha comprador vendido ventas array">
+for (Document coche : colCoches.find(Filters.eq("model", "Rolls"))) {
+    System.out.println("Coche: " + coche.getString("matricula"));
+
+    List<Document> revs = coche.getList("revisiones", Document.class);
+    if (revs != null) for (Document r : revs) System.out.println("  Revisión: " + r.get("fecha"));
+
+    Document venta = colVentas.find(Filters.eq("matricula", coche.getString("matricula"))).first();
+    if (venta != null) {
+        Document comprador = colPersonas.find(Filters.eq("dni", venta.get("comprador"))).first();
+        System.out.println("  Comprador: " + comprador.getString("nombre"));
+    }
+}
+</script>
+
+<script type="text/plain" class="code" data-title="Ejercicio 5 — Persona que más ha gastado (con empates) usando aggregate" data-tags="aggregate group sum accumulators maximo mas dinero gastado empate sort limit">
+// 1) Total gastado por comprador
+List<Document> totales = colVentas.aggregate(Arrays.asList(
+        Aggregates.group("$comprador", Accumulators.sum("total", "$precio")),
+        Aggregates.sort(Sorts.descending("total"))
+)).into(new ArrayList<>());
+
+if (!totales.isEmpty()) {
+    // OJO: sum puede devolver Integer, Long o Double según los datos
+    double max = ((Number) totales.get(0).get("total")).doubleValue();
+
+    // 2) Todos los que igualan el máximo
+    for (Document t : totales) {
+        if (((Number) t.get("total")).doubleValue() == max) {
+            Document p = colPersonas.find(Filters.eq("dni", t.get("_id"))).first();
+            System.out.println(p.getString("nombre") + " " + p.getString("apellidos") + " -> " + max);
+        }
+    }
+}
+</script>
+
+<script type="text/plain" class="code" data-title="Aggregates: match, group, sort, limit, project, lookup, unwind" data-tags="aggregates match group sort limit project lookup unwind pipeline accumulators avg count">
+colVentas.aggregate(Arrays.asList(
+    Aggregates.match(Filters.gt("precio", 10000)),
+    Aggregates.group("$model", Accumulators.sum("total", "$precio"),
+                               Accumulators.avg("media", "$precio"),
+                               Accumulators.sum("n", 1)),
+    Aggregates.sort(Sorts.descending("total")),
+    Aggregates.limit(5),
+    Aggregates.project(Projections.fields(Projections.include("total"), Projections.excludeId()))
+)).forEach(d -> System.out.println(d.toJson()));
+
+// Unir colecciones y desplegar array
+Aggregates.lookup("Personas", "comprador", "dni", "datosComprador")
+Aggregates.unwind("$revisiones")
+</script>
+
+<script type="text/plain" class="code" data-title="Insertar, actualizar, borrar, contar" data-tags="insertone insertmany updateone updatemany deleteone deletemany countdocuments updates set inc push distinct escribir">
+// INSERT
+Document nuevo = new Document("nombre", "Gazpacho")
+        .append("tipo", "Sopa fría")
+        .append("ingredientes", Arrays.asList(
+                new Document("nombre", "Tomate").append("cantidad", "1 kg")));
+col.insertOne(nuevo);
+col.insertMany(Arrays.asList(doc1, doc2));
+
+// UPDATE
+col.updateOne(Filters.eq("matricula", "1234ABC"), Updates.set("precio", 25000));
+col.updateMany(Filters.eq("model", "Rolls"), Updates.inc("precio", 1000));
+col.updateOne(filtro, Updates.push("revisiones", new Document("fecha", "2024-01-01")));
+col.updateOne(filtro, Updates.combine(Updates.set("a", 1), Updates.set("b", 2)));
+
+// DELETE
+col.deleteOne(Filters.eq("matricula", "1234ABC"));
+col.deleteMany(Filters.lt("precio", 1000));
+
+// COUNT y DISTINCT
+long n = col.countDocuments(Filters.eq("tipo", "Deportes"));
+for (String m : col.distinct("model", String.class)) System.out.println(m);
+
+// Resultado de update
+UpdateResult res = col.updateOne(filtro, Updates.set("x", 1));
+System.out.println(res.getMatchedCount() + " / " + res.getModifiedCount());
+</script>
+</section>
+
+<section id="errores-mongodb" data-tab="mongodb">
+<h2>Errores típicos</h2>
+<p class="lead">Lo que más suele fallar en estos ejercicios.</p>
+<script type="text/plain" class="code" data-title="Checklist rápido" data-tags="errores trampas checklist problemas" data-lang="list">
+- find(...).first() devuelve null si no hay resultado -> NullPointerException si no lo compruebas.
+- Tipos: Filters.eq("Num_socio", "5") no encuentra Integer 5. Respeta el tipo.
+- Nombres de campo sensibles a mayúsculas y tildes ("páginas" != "paginas").
+- Un Document no se castea a ArrayList: los arrays se leen con (List<Document>) o doc.getList(...).
+- Ordenar por una fecha guardada como String solo funciona si el formato es ISO (yyyy-MM-dd).
+- Cierra el MongoClient en el finally (y comprueba != null).
+</script>
+</section>
+
+<section id="dep-json" data-tab="json">
+<h2>Dependencias Maven</h2>
+<p class="lead">Gson para leer y escribir JSON, JsonPath para consultarlo.</p>
+<script type="text/plain" class="code" data-title="pom.xml — gson + json-path" data-tags="maven pom dependency gson jsonpath" data-lang="xml">
+<dependencies>
+    <!-- Gson -->
+    <dependency>
+        <groupId>com.google.code.gson</groupId>
+        <artifactId>gson</artifactId>
+        <version>2.10.1</version>
+    </dependency>
+    <!-- JsonPath (estilo XPath para JSON) -->
+    <dependency>
+        <groupId>com.jayway.jsonpath</groupId>
+        <artifactId>json-path</artifactId>
+        <version>2.9.0</version>
+    </dependency>
+</dependencies>
+</script>
+</section>
+
+<section id="json-gson" data-tab="json">
+<h2>JSON + Gson + POJO</h2>
+<p class="lead">Convertir documentos Mongo ↔ objetos Java y leer/escribir ficheros JSON.</p>
+
+<script type="text/plain" class="code" data-title="POJO Persona (solo atributos propios, sin relación con coches)" data-tags="pojo persona clase atributos getters tostring gson serializedname">
+import com.google.gson.annotations.SerializedName;
+
+public class Persona {
+    private String nombre;
+    private String apellidos;
+    private String city;
+    // añade el resto de atributos de la persona con el MISMO nombre que en el documento
+    // (o usa @SerializedName("nombre_en_json") sobre el atributo)
+
+    public Persona() {}
+
+    public String getNombre() { return nombre; }
+    public void setNombre(String nombre) { this.nombre = nombre; }
+    public String getApellidos() { return apellidos; }
+    public void setApellidos(String apellidos) { this.apellidos = apellidos; }
+    public String getCity() { return city; }
+    public void setCity(String city) { this.city = city; }
+
+    @Override
+    public String toString() {
+        return nombre + " " + apellidos + " (" + city + ")";
+    }
+}
+</script>
+
+<script type="text/plain" class="code" data-title="Ampliación 1 — Personas de London → ArrayList&lt;Persona&gt; con Gson" data-tags="london personas arraylist gson fromjson tojson pojo mongo documento convertir ampliacion">
+Gson gson = new Gson();
+ArrayList<Persona> personas = new ArrayList<>();
+
+MongoCollection<Document> colPersonas = bd.getCollection("Personas");
+for (Document d : colPersonas.find(Filters.eq("city", "London"))) {   // si city está embebida: "address.city"
+    // Gson ignora los campos del JSON que no existen en la clase (p. ej. _id y los del coche)
+    Persona p = gson.fromJson(d.toJson(), Persona.class);
+    personas.add(p);
+}
+
+for (Persona p : personas) {
+    System.out.println(p);
+}
+</script>
+
+<script type="text/plain" class="code" data-title="Gson: objeto ↔ JSON, listas con TypeToken, pretty printing" data-tags="gson tojson fromjson typetoken list gsonbuilder prettyprinting serializar deserializar">
+import com.google.gson.*;
+import com.google.gson.reflect.TypeToken;
+import java.lang.reflect.Type;
+
+Gson gson = new Gson();
+Gson bonito = new GsonBuilder().setPrettyPrinting().create();
+
+String json = gson.toJson(persona);                         // objeto -> JSON
+Persona p = gson.fromJson(json, Persona.class);              // JSON -> objeto
+
+Type tipoLista = new TypeToken<List<Persona>>(){}.getType();
+List<Persona> lista = gson.fromJson(jsonArray, tipoLista);   // JSON array -> lista
+String jsonLista = bonito.toJson(lista);
+</script>
+
+<script type="text/plain" class="code" data-title="Leer un fichero JSON (JsonParser / JsonArray / JsonObject)" data-tags="leer fichero json filereader jsonparser jsonarray jsonobject getasstring getasint getasdouble has recorrer">
+import com.google.gson.*;
+import java.io.*;
+
+JsonArray array;
+try (Reader reader = new FileReader("platos.json")) {
+    array = JsonParser.parseReader(reader).getAsJsonArray();      // Gson >= 2.8.6
+    // versiones antiguas: new JsonParser().parse(reader).getAsJsonArray();
+}
+
+for (JsonElement el : array) {
+    JsonObject o = el.getAsJsonObject();
+    String nombre = o.get("nombre").getAsString();
+    double precio = o.get("precio").getAsDouble();
+    JsonArray ings = o.getAsJsonArray("ingredientes");
+    JsonObject ubic = o.getAsJsonObject("ubicacion");               // objeto anidado
+    if (o.has("stock")) System.out.println(o.get("stock").getAsInt());
+}
+</script>
+
+<script type="text/plain" class="code" data-title="Escribir un fichero JSON" data-tags="escribir fichero json filewriter pretty guardar">
+try (Writer writer = new FileWriter("productos.json")) {
+    Gson bonito = new GsonBuilder().setPrettyPrinting().create();
+    bonito.toJson(array, writer);          // array es un JsonArray (o una List<...>)
+}
+</script>
+
+<div class="note">El JSON del ejercicio de platos tiene errores de sintaxis: falta cerrar comillas en <code>"Huevo,</code> y sobran <code>]}</code> / <code>[</code> entre «Ensalada» y «Bizcocho». Corrígelo para que sea un único array válido <code>[ {...}, {...}, {...}, {...} ]</code> o el parser fallará.</div>
+
+<script type="text/plain" class="code" data-title="Ampliación 2 — Crear BD Cocina / colección platos desde un fichero JSON" data-tags="cocina platos insertar json fichero document parse insertone insertmany bd nueva ampliacion">
+import com.google.gson.*;
+import org.bson.Document;
+import com.mongodb.client.*;
+import java.io.*;
+import java.util.*;
+
+MongoClient cliente = MongoClients.create();
+try (Reader reader = new FileReader("Platos.json")) {
+    JsonArray platos = JsonParser.parseReader(reader).getAsJsonArray();
+
+    MongoDatabase bd = cliente.getDatabase("Cocina");              // se crea al insertar
+    MongoCollection<Document> col = bd.getCollection("platos");
+
+    List<Document> docs = new ArrayList<>();
+    for (JsonElement plato : platos) {
+        docs.add(Document.parse(plato.toString()));                // JSON -> Document (arrays incluidos)
+    }
+    col.insertMany(docs);                                          // o insertOne dentro del bucle
+    System.out.println("Insertados " + docs.size() + " platos");
+} catch (IOException e) {
+    e.printStackTrace();
+} finally {
+    cliente.close();
+}
+</script>
+
+<script type="text/plain" class="code" data-title="Variante con POJOs (Plato / Ingrediente) y Gson" data-tags="pojo plato ingrediente gson typetoken document parse variante">
+class Ingrediente { String nombre; String cantidad; }
+class Plato { String nombre; String tipo; List<Ingrediente> ingredientes; }
+
+Gson gson = new Gson();
+Type t = new TypeToken<List<Plato>>(){}.getType();
+List<Plato> platos;
+try (Reader r = new FileReader("Platos.json")) {
+    platos = gson.fromJson(r, t);
+}
+for (Plato p : platos) {
+    col.insertOne(Document.parse(gson.toJson(p)));
+}
+</script>
+</section>
+
+<section id="json-cocina" data-tab="json">
+<h2>Consultas JSON — Práctica Cocina</h2>
+<p class="lead">Con Gson (recorriendo) y con JsonPath (estilo XPath). Se asume <code>JsonArray platos</code> ya leído.</p>
+
+<script type="text/plain" class="code" data-title="a) Ingredientes del gazpacho" data-tags="cocina gazpacho ingredientes gson consulta a">
+for (JsonElement el : platos) {
+    JsonObject p = el.getAsJsonObject();
+    if (p.get("nombre").getAsString().equalsIgnoreCase("Gazpacho")) {
+        for (JsonElement i : p.getAsJsonArray("ingredientes")) {
+            JsonObject ing = i.getAsJsonObject();
+            System.out.println(ing.get("nombre").getAsString() + " - " + ing.get("cantidad").getAsString());
+        }
+    }
+}
+</script>
+
+<script type="text/plain" class="code" data-title="b) Platos que llevan tomate" data-tags="cocina platos tomate ingrediente contiene gson consulta b">
+for (JsonElement el : platos) {
+    JsonObject p = el.getAsJsonObject();
+    for (JsonElement i : p.getAsJsonArray("ingredientes")) {
+        if (i.getAsJsonObject().get("nombre").getAsString().equalsIgnoreCase("tomate")) {
+            System.out.println(p.get("nombre").getAsString());
+            break;                       // no repetir el plato
+        }
+    }
+}
+</script>
+
+<script type="text/plain" class="code" data-title="c) Platos de tipo 'Primero' y sus ingredientes" data-tags="cocina primero tipo ingredientes gson consulta c">
+for (JsonElement el : platos) {
+    JsonObject p = el.getAsJsonObject();
+    if (p.get("tipo").getAsString().equalsIgnoreCase("Primero")) {
+        System.out.println(p.get("nombre").getAsString());
+        for (JsonElement i : p.getAsJsonArray("ingredientes")) {
+            JsonObject ing = i.getAsJsonObject();
+            System.out.println("   " + ing.get("nombre").getAsString() + " " + ing.get("cantidad").getAsString());
+        }
+    }
+}
+</script>
+
+<div class="note"><b>d) El problema:</b> <code>cantidad</code> es un String que mezcla número y unidad ("4 ud", "1 kg", "500 g"), no se puede sumar directamente. <b>Solución:</b> separar número y unidad con una expresión regular, y comparar solo cantidades en la misma unidad (huevos → "ud"). Además hay que decidir qué significa «al menos 3 platos»: aquí se cogen los 3 platos con huevo que menos necesitan. Con los datos del enunciado solo hay 2 platos con huevo, así que no se llega a 3.</div>
+
+<script type="text/plain" class="code" data-title="d) Huevos necesarios para ofrecer al menos 3 platos con huevo" data-tags="cocina huevos cantidad regex parsear unidad sumar problema consulta d pattern matcher">
+import java.util.regex.*;
+
+List<Integer> huevosPorPlato = new ArrayList<>();
+for (JsonElement el : platos) {
+    JsonObject p = el.getAsJsonObject();
+    for (JsonElement i : p.getAsJsonArray("ingredientes")) {
+        JsonObject ing = i.getAsJsonObject();
+        if (ing.get("nombre").getAsString().equalsIgnoreCase("huevo")) {
+            Matcher m = Pattern.compile("(\\d+(?:[.,]\\d+)?)\\s*(\\w+)").matcher(ing.get("cantidad").getAsString());
+            if (m.find()) {
+                // m.group(1) = número, m.group(2) = unidad
+                huevosPorPlato.add((int) Double.parseDouble(m.group(1).replace(',', '.')));
+            }
+        }
+    }
+}
+Collections.sort(huevosPorPlato);
+if (huevosPorPlato.size() < 3) {
+    System.out.println("Solo hay " + huevosPorPlato.size() + " platos con huevo: no se pueden ofrecer 3");
+} else {
+    int suma = 0;
+    for (int i = 0; i < 3; i++) suma += huevosPorPlato.get(i);
+    System.out.println("Huevos mínimos para 3 platos: " + suma);
+}
+</script>
+
+<script type="text/plain" class="code" data-title="e) JsonPath — consultas a y b" data-tags="jsonpath jayway xpath json consulta filtro a b cocina gazpacho tomate">
+import com.jayway.jsonpath.JsonPath;
+import java.util.List;
+
+String json = new String(java.nio.file.Files.readAllBytes(java.nio.file.Paths.get("Platos.json")));
+
+// a) ingredientes del gazpacho
+List<Object> ings = JsonPath.read(json, "$[?(@.nombre=='Gazpacho')].ingredientes[*]");
+System.out.println(ings);
+
+// b) nombres de platos que tienen tomate
+List<String> platosTomate = JsonPath.read(json, "$[?(@.ingredientes[?(@.nombre=='Tomate')])].nombre");
+System.out.println(platosTomate);
+</script>
+
+<script type="text/plain" class="code" data-title="Sintaxis JsonPath (resumen)" data-tags="jsonpath sintaxis resumen operadores filtros wildcard recursivo">
+$                          raíz
+$[*]                       todos los elementos del array raíz
+$[0]                       primer elemento
+$[0:2]                     elementos 0 y 1
+$..nombre                  búsqueda recursiva de "nombre"
+$[*].nombre                el nombre de cada elemento
+$[?(@.precio < 50)]        filtro numérico
+$[?(@.tipo == 'Ropa')]     filtro por texto
+$[?(@.tipo == 'Ropa' && @.stock > 60)]    AND
+$[?(@.categorias contains 'Deportes')]    el array contiene el valor
+$[?(@.nombre =~ /.*Nike.*/i)]             regex
+$.length()                 nº de elementos
+</script>
+</section>
+
+<section id="json-productos" data-tab="json">
+<h2>Consultas JSON — Productos</h2>
+<p class="lead">Con <code>JsonArray productos</code> leído del fichero y con JsonPath.</p>
+
+<script type="text/plain" class="code" data-title="1. Nombre de todos los productos" data-tags="productos nombre todos nombre_producto gson jsonpath">
+for (JsonElement el : productos) {
+    System.out.println(el.getAsJsonObject().get("nombre_producto").getAsString());
+}
+// JsonPath: $[*].nombre_producto
+</script>
+
+<script type="text/plain" class="code" data-title="2. Nombre y precio de los productos de tipo «Ropa»" data-tags="productos ropa tipo_producto nombre precio filtro">
+for (JsonElement el : productos) {
+    JsonObject p = el.getAsJsonObject();
+    if (p.get("tipo_producto").getAsString().equals("Ropa")) {
+        System.out.println(p.get("nombre_producto").getAsString() + " - " + p.get("precio").getAsDouble());
+    }
+}
+// JsonPath: $[?(@.tipo_producto=='Ropa')]['nombre_producto','precio']
+</script>
+
+<script type="text/plain" class="code" data-title="3. Toda la información de «Pantalones Levi's 501»" data-tags="productos levis pantalones toda informacion tostring pretty">
+Gson bonito = new GsonBuilder().setPrettyPrinting().create();
+for (JsonElement el : productos) {
+    JsonObject p = el.getAsJsonObject();
+    if (p.get("nombre_producto").getAsString().equals("Pantalones Levi's 501")) {
+        System.out.println(bonito.toJson(p));
+    }
+}
+// JsonPath: $[?(@.nombre_producto=="Pantalones Levi's 501")]
+</script>
+
+<script type="text/plain" class="code" data-title="4. Nombre y stock de productos en «Almacén 1» con precio < 15" data-tags="productos almacen 1 precio inferior 15 stock ubicacion anidado">
+for (JsonElement el : productos) {
+    JsonObject p = el.getAsJsonObject();
+    String almacen = p.getAsJsonObject("ubicacion").get("almacen").getAsString();
+    if (almacen.equals("Almacén 1") && p.get("precio").getAsDouble() < 15) {
+        System.out.println(p.get("nombre_producto").getAsString() + " - stock " + p.get("stock").getAsInt());
+    }
+}
+// JsonPath: $[?(@.ubicacion.almacen=='Almacén 1' && @.precio < 15)]['nombre_producto','stock']
+// (con los datos actuales no sale ninguno: el más barato cuesta 19.99)
+</script>
+
+<script type="text/plain" class="code" data-title="5. Nombre y ubicación completa de productos con stock < 50" data-tags="productos stock menor 50 ubicacion completa">
+for (JsonElement el : productos) {
+    JsonObject p = el.getAsJsonObject();
+    if (p.get("stock").getAsInt() < 50) {
+        JsonObject u = p.getAsJsonObject("ubicacion");
+        System.out.println(p.get("nombre_producto").getAsString() + " -> "
+            + u.get("almacen").getAsString() + ", "
+            + u.get("pasillo").getAsString() + ", "
+            + u.get("estanteria").getAsString());
+    }
+}
+// JsonPath: $[?(@.stock < 50)]['nombre_producto','ubicacion']
+</script>
+
+<script type="text/plain" class="code" data-title="6. Nombre y tipo de productos del Pasillo 3 del Almacén 3" data-tags="productos pasillo 3 almacen 3 nombre tipo">
+for (JsonElement el : productos) {
+    JsonObject p = el.getAsJsonObject();
+    JsonObject u = p.getAsJsonObject("ubicacion");
+    if (u.get("almacen").getAsString().equals("Almacén 3") && u.get("pasillo").getAsString().equals("Pasillo 3")) {
+        System.out.println(p.get("nombre_producto").getAsString() + " - " + p.get("tipo_producto").getAsString());
+    }
+}
+// JsonPath: $[?(@.ubicacion.almacen=='Almacén 3' && @.ubicacion.pasillo=='Pasillo 3')]['nombre_producto','tipo_producto']
+</script>
+
+<script type="text/plain" class="code" data-title="8. Cuántos productos hay de la categoría «Deportes»" data-tags="productos contar categoria deportes categorias array contains count">
+// Por el array "categorias" (productos cuya lista de categorías incluye Deportes)
+int n = 0;
+for (JsonElement el : productos) {
+    for (JsonElement c : el.getAsJsonObject().getAsJsonArray("categorias")) {
+        if (c.getAsString().equals("Deportes")) { n++; break; }
+    }
+}
+System.out.println("Productos de Deportes: " + n);
+
+// JsonPath: ((List<?>) JsonPath.read(json, "$[?(@.categorias contains 'Deportes')]")).size()
+// Si se refiere a tipo_producto: $[?(@.tipo_producto=='Deportes')]
+</script>
+
+<script type="text/plain" class="code" data-title="9. Pedir un producto al usuario e insertarlo en el fichero" data-tags="productos insertar nuevo usuario scanner jsonobject jsonarray add escribir fichero">
+System.out.println("Nombre:");     String nombre = tec.nextLine();
+System.out.println("Precio:");     double precio = tec.nextDouble(); tec.nextLine();
+System.out.println("Stock:");      int stock = tec.nextInt();       tec.nextLine();
+System.out.println("Tipo:");       String tipo = tec.nextLine();
+System.out.println("Categorías (separadas por coma):");
+String[] cats = tec.nextLine().split(",");
+System.out.println("Almacén:");    String alm = tec.nextLine();
+System.out.println("Estantería:"); String est = tec.nextLine();
+System.out.println("Pasillo:");    String pas = tec.nextLine();
+
+JsonObject nuevo = new JsonObject();
+nuevo.addProperty("nombre_producto", nombre);
+nuevo.addProperty("precio", precio);
+JsonArray categorias = new JsonArray();
+for (String c : cats) categorias.add(c.trim());
+nuevo.add("categorias", categorias);
+nuevo.addProperty("stock", stock);
+JsonObject ubic = new JsonObject();
+ubic.addProperty("almacen", alm);
+ubic.addProperty("estanteria", est);
+ubic.addProperty("pasillo", pas);
+nuevo.add("ubicacion", ubic);
+nuevo.addProperty("tipo_producto", tipo);
+
+productos.add(nuevo);
+
+try (Writer w = new FileWriter("productos.json")) {
+    new GsonBuilder().setPrettyPrinting().create().toJson(productos, w);
+}
+</script>
+
+<div class="note">El JSON de productos del enunciado empieza sin <code>[</code> y está pegado con texto de Copilot al final. Deja solo el array válido: empieza en <code>[</code>, termina en <code>]</code>, y sin los textos intermedios.</div>
+</section>
+
+<section id="errores-json" data-tab="json">
+<h2>Errores típicos</h2>
+<p class="lead">Lo que más suele fallar en estos ejercicios.</p>
+<script type="text/plain" class="code" data-title="Checklist rápido" data-tags="errores trampas checklist problemas" data-lang="list">
+- JSON mal formado (comillas sin cerrar, ] sobrantes) -> JsonSyntaxException.
+- getAsString() sobre un valor que no existe -> NullPointerException: usa has("campo").
+- Document.parse() necesita un JSON de objeto ({...}), no un array.
+</script>
+</section>
+
+</main>
+</div>
+
+<script>
+(function(){
+  var TABS = {jdbc:'JDBC', mongodb:'MongoDB', json:'JSON'};
+  var KW = /^(abstract|boolean|break|case|catch|char|class|continue|default|do|double|else|extends|final|finally|float|for|if|implements|import|instanceof|int|long|new|null|package|private|public|return|static|super|this|throw|throws|true|false|try|void|while|var|switch)$/;
+  function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+  function span(c,s){return '<span class="'+c+'">'+esc(s)+'</span>';}
+
+  function hlJava(src){
+    var re=/(\/\*[\s\S]*?\*\/|\/\/[^\n]*)|("(?:\\.|[^"\\\n])*")|(\b\d+(?:\.\d+)?[LDdf]?\b)|(@\w+)|([A-Za-z_]\w*)/g, out='', last=0, m;
+    while((m=re.exec(src))){
+      out+=esc(src.slice(last,m.index)); last=re.lastIndex;
+      if(m[1]) out+=span('c',m[0]); else if(m[2]) out+=span('s',m[0]); else if(m[3]) out+=span('n',m[0]);
+      else if(m[4]) out+=span('a',m[0]);
+      else if(KW.test(m[0])) out+=span('k',m[0]);
+      else if(/^[A-Z]/.test(m[0])) out+=span('t',m[0]);
+      else if(src.charAt(last)==='(') out+=span('f',m[0]);
+      else out+=esc(m[0]);
+    }
+    return out+esc(src.slice(last));
+  }
+  function hlXml(src){
+    var re=/(<!--[\s\S]*?-->)|(<\/?[\w:.-]+)/g, out='', last=0, m;
+    while((m=re.exec(src))){
+      out+=esc(src.slice(last,m.index)); last=re.lastIndex;
+      out+= m[1] ? span('c',m[0]) : span('k',m[0]);
+    }
+    return out+esc(src.slice(last));
+  }
+  function hlShell(src){
+    var re=/(--[\w-]+)|(^(?:cd|mongoimport)\b)/gm, out='', last=0, m;
+    while((m=re.exec(src))){
+      out+=esc(src.slice(last,m.index)); last=re.lastIndex;
+      out+= m[1] ? span('n',m[0]) : span('f',m[0]);
+    }
+    return out+esc(src.slice(last));
+  }
+  function inlineCode(line){
+    return line.split(/("[^"]*"|\b[\w.]+\([^()]*\)|\b[A-Z][A-Za-z]*Exception\b|\b[A-Z][A-Z_]{4,}\b|\bnull\b)/).map(function(p,i){
+      return i%2 ? '<code>'+esc(p)+'</code>' : esc(p);
+    }).join('');
+  }
+
+  // 1) Bloques de código / listas
+  document.querySelectorAll('script.code').forEach(function(s){
+    var text = s.textContent.replace(/^\n/, '').replace(/\s+$/, '');
+    var lang = s.dataset.lang || (text.charAt(0)==='<' ? 'xml' : 'java');
+    var wrap = document.createElement('div');
+    wrap.className = 'block';
+    wrap.dataset.search = ((s.dataset.title||'')+' '+(s.dataset.tags||'')+' '+text).toLowerCase();
+    wrap.dataset.head = ((s.dataset.title||'')+' '+(s.dataset.tags||'')).toLowerCase();
+    var head = document.createElement('div'); head.className='bh';
+    var h3 = document.createElement('h3'); h3.textContent = s.dataset.title||'';
+    head.appendChild(h3);
+    wrap.appendChild(head);
+
+    if (lang==='list') {
+      var ul = document.createElement('ul'); ul.className='checks';
+      text.split('\n').forEach(function(l){
+        l = l.replace(/^\s*-\s*/, ''); if(!l) return;
+        var li = document.createElement('li'); li.innerHTML = inlineCode(l); ul.appendChild(li);
+      });
+      wrap.appendChild(ul);
+    } else {
+      var btn = document.createElement('button'); btn.className='copy'; btn.type='button'; btn.textContent='Copiar';
+      head.appendChild(btn);
+      var pre = document.createElement('pre'), code = document.createElement('code');
+      code.innerHTML = lang==='xml' ? hlXml(text) : lang==='shell' ? hlShell(text) : hlJava(text);
+      code.style.background='none'; code.style.padding='0'; code.style.font='inherit';
+      pre.tabIndex = 0; pre.appendChild(code); wrap.appendChild(pre);
+      btn.addEventListener('click', function(){
+        function ok(){ btn.textContent='¡Copiado!'; btn.classList.add('ok'); setTimeout(function(){btn.textContent='Copiar'; btn.classList.remove('ok');},1400); }
+        function fallback(){
+          var ta=document.createElement('textarea'); ta.value=text; ta.style.cssText='position:fixed;opacity:0';
+          document.body.appendChild(ta); ta.select();
+          try{document.execCommand('copy'); ok();}catch(e){}
+          document.body.removeChild(ta);
+        }
+        if(navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(text).then(ok, fallback); else fallback();
+      });
+    }
+    s.parentNode.replaceChild(wrap, s);
+  });
+
+  // 2) Estado, navegación y buscador
+  var nav=document.getElementById('nav'), q=document.getElementById('q'), count=document.getElementById('count'),
+      empty=document.getElementById('empty'), tabsEl=document.getElementById('tabs'),
+      sections=[].slice.call(document.querySelectorAll('main section')), active='jdbc';
+  sections.forEach(function(sec){
+    var chip=document.createElement('span'); chip.className='chip'; chip.textContent=TABS[sec.dataset.tab];
+    sec.querySelector('h2').appendChild(chip);
+  });
+
+  function buildNav(){
+    nav.innerHTML='';
+    sections.forEach(function(sec){
+      if(sec.dataset.tab!==active || sec.classList.contains('hide')) return;
+      var a=document.createElement('a'); a.href='#'+sec.id; a.textContent=sec.querySelector('h2').childNodes[0].textContent; a.dataset.target=sec.id;
+      a.addEventListener('click',function(e){e.preventDefault(); sec.scrollIntoView();});
+      nav.appendChild(a);
+    });
+    spy();
+  }
+  function spy(){
+    var cur=null;
+    sections.forEach(function(sec){
+      if(sec.dataset.tab===active && !sec.classList.contains('hide') && sec.getBoundingClientRect().top<150) cur=sec.id;
+    });
+    if(!cur){ var f=nav.firstChild; cur=f&&f.dataset.target; }
+    [].forEach.call(nav.children,function(a){a.classList.toggle('active',a.dataset.target===cur);});
+  }
+
+  function filtrar(){
+    var terms=q.value.toLowerCase().split(/\s+/).filter(Boolean), per={jdbc:0,mongodb:0,json:0};
+    sections.forEach(function(sec){
+      var vis=0, blocks=sec.querySelectorAll('.block');
+      blocks.forEach(function(b){
+        var ok=terms.every(function(t){return b.dataset.search.indexOf(t)!==-1;});
+        b.classList.toggle('hide',!ok); if(ok) vis++;
+      });
+      var secText=(sec.querySelector('h2').textContent+' '+(sec.querySelector('.lead')||{textContent:''}).textContent).toLowerCase();
+      if(terms.length && vis===0 && terms.every(function(t){return secText.indexOf(t)!==-1;})){
+        blocks.forEach(function(b){b.classList.remove('hide'); vis++;});
+      }
+      sec.classList.toggle('hide',vis===0);
+      sec.classList.toggle('off',sec.dataset.tab!==active);
+      per[sec.dataset.tab]+=vis;
+    });
+    [].forEach.call(tabsEl.children,function(b){
+      var t=b.dataset.tab, n=terms.length?per[t]:document.querySelectorAll('section[data-tab="'+t+'"] .block').length;
+      b.querySelector('small').textContent=n; b.classList.toggle('has',!!terms.length && n>0);
+      b.setAttribute('aria-selected',t===active);
+    });
+    document.querySelectorAll('.note').forEach(function(n){n.style.display=terms.length?'none':'';});
+    count.textContent=terms.length ? per[active]+' en '+TABS[active] : '';
+    if(terms.length && per[active]===0){
+      var others=Object.keys(per).filter(function(t){return per[t]>0;});
+      empty.style.display='block';
+      empty.innerHTML=others.length ? 'Nada en '+TABS[active]+'. Hay resultados en:<br>' : 'Sin resultados. Prueba con otra palabra.';
+      others.forEach(function(t){var b=document.createElement('button'); b.textContent=TABS[t]+' ('+per[t]+')'; b.onclick=function(){setTab(t);}; empty.appendChild(b);});
+    } else empty.style.display='none';
+    buildNav();
+  }
+
+  function setTab(t, noScroll){
+    active=t; document.documentElement.dataset.tab=t;
+    try{ history.replaceState(null,'','#'+t); localStorage.setItem('chuleta-tab',t); }catch(e){}
+    filtrar(); if(!noScroll) window.scrollTo(0,0);
+  }
+  [].forEach.call(tabsEl.children,function(b){b.addEventListener('click',function(){setTab(b.dataset.tab);});});
+  q.addEventListener('input',filtrar);
+  window.addEventListener('scroll',function(){requestAnimationFrame(spy);},{passive:true});
+  document.addEventListener('keydown',function(e){
+    if(e.key==='/' && document.activeElement!==q){e.preventDefault(); q.focus(); q.select();}
+    if(e.key==='Escape'){q.value=''; filtrar(); q.blur();}
+  });
+
+
+  // 3) Analizador de enunciados (offline, por palabras clave)
+  function N(s){return s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();}
+  var CON=[
+   ['teclado','Pedir datos al usuario','teclad|introduc|pide |pedir|solicit|scanner|por pantalla','Tras nextInt()/nextDouble() añade tec.nextLine(), o el siguiente nextLine() leerá vacío.',['scanner','teclado','nextline']],
+   ['select','Consulta de lectura','muestr|list|visualiz|obten|consult|devuelv|cuales|selecciona|nombre de|que .* (han|tienen)','En JDBC usa ? y pstmt.setXxx(n, valor); los índices empiezan en 1.',['select','preparedstatement','resultset']],
+   ['group','Agrupar / contar por grupo','por cada|agrup|por equipo|por categoria|cuantos .* por|group by','Todas las columnas del SELECT deben ir en el GROUP BY (ONLY_FULL_GROUP_BY).',['group by','count']],
+   ['having','Condición sobre el grupo','al menos \\d|mas de \\d|menos de \\d \\w+ (ganad|vend|realiz)|having','Si filtras por un COUNT/SUM, va en HAVING, no en WHERE.',['having']],
+   ['insert','Insertar','inserta|insertar|insercion|anad|dar de alta|\\balta\\b|registr|nuevo|nueva','Comprueba antes lo que pida el enunciado (existe, máximos, rangos).',['insert','insertone','executeupdate']],
+   ['update','Actualizar','actualiz|modific|cambia|incrementa|asigna|sustituye','Comprueba las filas afectadas que devuelve executeUpdate().',['update','updateone','executeupdate']],
+   ['delete','Borrar','elimin|borra|borrar|suprim|delete','Si borras en varias tablas, hazlo dentro de una transacción.',['delete','deleteone','executeupdate']],
+   ['control','Validar antes de operar','comprueb|valid|verific|control|restric|solo si|no (puede|se permite|debe)|maximo|minimo|entre \\d+ y \\d+|debe existir|existe|no existe','Haz cada comprobación con su propia consulta y corta con un mensaje claro si falla.',['restriccion','existe','comprobar','validar']],
+   ['dup','Clave duplicada / integridad','duplicad|ya existe|clave primaria|integridad','También puedes capturar la excepción de integridad en lugar de consultar antes.',['duplicada','1062','integridad']],
+   ['trans','Transacción','transaccion|todo o nada|rollback|commit|atomic|fusion|fusionar|si falla|si algo falla','setAutoCommit(false) → commit() si todo va bien, rollback() en el catch.',['transaccion','rollback','commit']],
+   ['filtro','Filtrar por condición','mayor|menor|superior|inferior|igual|distint|entre|contiene|empieza|filtr|cuyo|cuyos|que sea|que tenga','En Mongo respeta el tipo del campo (String ≠ Integer) y las mayúsculas.',['filters','find']],
+   ['sort','Ordenar','ordena|ascendente|descendente|de mayor a menor|de menor a mayor|ordenad','Una fecha en String solo ordena bien en formato ISO (yyyy-MM-dd).',['sort','ascending','descending']],
+   ['limit','Limitar resultados','primer|\\btop\\b|limita|los \\d+ (mas|primeros)|solo \\d+','',['limit','skip']],
+   ['proy','Mostrar solo ciertos campos','solo (el|los|la|las) (nombre|campo)|unicamente|proyecc|sin (el )?_id','',['projection','include','excludeid']],
+   ['contar','Contar','cuant|contar|cuenta|numero total|numero de|total de','',['count','countdocuments','contar']],
+   ['agg','Agregación (suma, media, máximo)','media|promedio|\\bsuma\\b|maximo|mas (dinero|gastado|vendido)|aggregat|empate|total (gastado|vendido)','Con empates: calcula primero el máximo y luego filtra los que lo igualan.',['aggregate','group','sum','accumulators','avg']],
+   ['rel','Relacionar colecciones / tablas','relacion|asociad|junto con|\\by sus\\b|propietario|comprador|colecciones|de cada','Busca en la primera colección y usa el resultado como filtro en la segunda (o $lookup).',['lookup','relacionar','colecciones']],
+   ['array','Arrays y objetos anidados','array|lista de|anidad|embebid|subdocument|ingrediente|categorias|ubicacion','Un Document no se castea a ArrayList: usa getList() o (List<Document>).',['array','embebido','nested','arraylist']],
+   ['imp','Crear BD / importar datos','importa|mongoimport|crea(r)? (la )?(bd|base de datos|coleccion)|carga','',['mongoimport','insertmany','document parse']],
+   ['leerj','Leer un fichero JSON','\\blee\\b|leer|fichero|archivo|\\.json','Comprueba que el JSON es válido (empieza en [ o {) antes de depurar tu código.',['leer','fichero','jsonparser','filereader']],
+   ['escj','Escribir un fichero JSON','escrib|guarda|grabar|graba|persist|vuelca','Usa GsonBuilder().setPrettyPrinting() para que el fichero quede legible.',['escribir','filewriter','pretty']],
+   ['pojo','Objetos Java (POJO / Gson)','pojo|\\bclase\\b|objeto java|arraylist<|convert|deserializ|serializ|gson|mapea','Para listas usa TypeToken; los nombres de atributos deben coincidir con los del JSON.',['pojo','gson','typetoken','fromjson']],
+   ['jpath','JsonPath','jsonpath|xpath','',['jsonpath','sintaxis']],
+   ['rec','Recorrer elementos','recorr|para cada|bucle|iterar','',['recorrer']]
+  ].map(function(c){return {id:c[0],label:c[1],re:new RegExp(c[2]),tip:c[3],kw:c[4]};});
+  var TECH={
+   jdbc:/\b(sql|mysql|jdbc|tabla|tablas|select|insert|update|delete|where|join|clave (primaria|foranea|ajena)|ciclista|etapa|puerto|maillot|equipo|commit|rollback|transaccion)\b/g,
+   mongodb:/\b(mongo|mongodb|coleccion|colecciones|documento|documentos|find|aggregate|filters|concesionario|persona|personas|coche|coches|ventas)\b/g,
+   json:/\b(json|gson|jsonpath|fichero|archivo|array|productos|platos|pojo)\b/g
+  };
+  var BASE={jdbc:'Plantilla: conexión',mongodb:'Imports + conexión',json:'Leer un fichero JSON'};
+  var blocks=[].slice.call(document.querySelectorAll('.block')).map(function(b){
+    return {el:b,tab:b.closest('section').dataset.tab,sec:b.closest('section').querySelector('h2').childNodes[0].textContent,
+            title:b.querySelector('h3').textContent,head:N(b.dataset.head),all:N(b.dataset.search)};
+  });
+  function goTo(b){
+    q.value=''; setTab(b.tab,true); b.el.classList.add('flash'); b.el.scrollIntoView();
+    setTimeout(function(){b.el.classList.remove('flash');},2200);
+  }
+  function rank(cons,part,tech){
+    var words=(part.match(/[a-z_]{5,}/g)||[]);
+    return blocks.map(function(b){
+      var s=b.tab===tech?2:0, hit=false;
+      cons.forEach(function(c){c.kw.forEach(function(k){
+        if(b.head.indexOf(k)!==-1){s+=3;hit=true;} else if(b.all.indexOf(k)!==-1){s+=1;hit=true;}
+      });});
+      words.forEach(function(w){ if(b.head.indexOf(w)!==-1){s+=2;hit=true;} });
+      return {b:b,s:hit?s:0};
+    }).filter(function(x){return x.s>=4 && x.b.title.indexOf('Checklist')!==0 && x.b.title.indexOf('pom.xml')!==0;})
+      .sort(function(a,b){return b.s-a.s;}).slice(0,3).map(function(x){return x.b;});
+  }
+  var STOP=['donde','cuando','mientras','despues','entonces','tambien','siempre','deben','debe','puede','pueden','dicho','dicha','estos','estas','estan','sobre','hasta','desde','cada','otro','otra','otros','otras','segun','ademas','todos','todas','mismo','misma','mismos','mismas','programa','ejercicio','enunciado','realiza','realizar','hacer'];
+  function searchBtn(words,panel,sbtn){
+    var btn=document.createElement('button'); btn.type='button'; btn.className='sv-go';
+    btn.textContent='🔍 Buscar "'+words+'"';
+    btn.onclick=function(){
+      panel.classList.remove('open'); sbtn.setAttribute('aria-expanded','false');
+      q.value=words; filtrar(); window.scrollTo(0,0); q.focus();
+    };
+    return btn;
+  }
+  function goBtn(b){
+    var btn=document.createElement('button'); btn.type='button'; btn.className='sv-go';
+    btn.innerHTML=esc(b.title.length>70?b.title.slice(0,68)+'…':b.title)+'<small>'+TABS[b.tab]+'</small>';
+    btn.onclick=function(){goTo(b);}; return btn;
+  }
+  function analizar(){
+    var raw=document.getElementById('sv-text').value.trim(), out=document.getElementById('sv-out');
+    out.innerHTML='';
+    if(!raw){out.textContent='Pega primero el enunciado.'; return;}
+    var n=N(raw), score={};
+    Object.keys(TECH).forEach(function(k){score[k]=(n.match(TECH[k])||[]).length;});
+    var order=Object.keys(score).sort(function(a,b){return score[b]-score[a];}), top=order[0];
+    var head=document.createElement('p'); head.className='sv-tech';
+    if(score[top]===0){head.textContent='No he reconocido la tecnología. Revisa el apartado o prueba el buscador.';}
+    else{
+      head.innerHTML='Parece un ejercicio de <b>'+TABS[top]+'</b> <span style="color:var(--muted);font-weight:400">('+score[top]+' coincidencia'+(score[top]===1?'':'s')+')</span>'+(score[order[1]]>0&&score[order[1]]>=score[top]/2?' — también aparecen palabras de '+TABS[order[1]]+'.':'.');
+    }
+    out.appendChild(head);
+    if(score[top]>0){
+      var base=blocks.filter(function(b){return b.tab===top && b.title.indexOf(BASE[top])===0;})[0];
+      if(base){var p=document.createElement('p'); p.textContent='Empieza por: '; p.style.margin='0 0 8px'; p.appendChild(goBtn(base)); out.appendChild(p);}
+    }
+    var parts=raw.split(/\n+/).reduce(function(a,l){return a.concat(l.split(/(?=\b[a-h][.)]\s)|(?=\b\d{1,2}[.)]\s)|(?=^[-•*]\s)/));},[])
+      .map(function(s){return s.replace(/^[-•*]\s*/,'').trim();}).filter(function(s){return s.length>12;});
+    if(!parts.length) parts=[raw];
+    parts.forEach(function(part,i){
+      var pn=N(part), cons=CON.filter(function(c){return c.re.test(pn);});
+      var div=document.createElement('div'); div.className='sv-part';
+      var bq=document.createElement('blockquote'); bq.textContent=part.length>200?part.slice(0,198)+'…':part; div.appendChild(bq);
+      if(!cons.length){
+        var m=document.createElement('p'); m.textContent='No he reconocido acciones aquí.'; div.appendChild(m);
+        var cand=(part.toLowerCase().match(/[a-zá-úñ_]{5,}/gi)||[]).filter(function(w){return STOP.indexOf(w)===-1;});
+        var uniq=cand.filter(function(w,i,a){return a.indexOf(w)===i;});
+        var hits=function(w){return blocks.filter(function(b){return b.el.dataset.search.indexOf(w)!==-1;});};
+        // busca, para cada palabra del enunciado, la palabra EXACTA tal cual está escrita en la chuleta
+        // aunque la del enunciado tenga distinto acento o esté en singular/plural — así no hace falta
+        // que la palabra exista literalmente igual, pero lo que se sugiere sí está garantizado al 100%.
+        function literalMatch(w){
+          var nw=N(w), root=(nw.length>5?nw.replace(/(ciones|siones|es|as|os|a|o|e|s)$/,''):nw);
+          if(root.length<4) root=nw;
+          var exact=null, partial=null;
+          for(var bi=0;bi<blocks.length && !exact;bi++){
+            var raw=blocks[bi].el.dataset.search.match(/[a-zá-úñ]+/gi)||[];
+            for(var ri=0;ri<raw.length;ri++){
+              var nr=N(raw[ri]);
+              if(nr===nw){exact=raw[ri]; break;}
+              if(!partial && nr.indexOf(root)===0){partial=raw[ri];}
+            }
+          }
+          return exact||partial||null;
+        }
+        var terms=[];
+        uniq.forEach(function(w){
+          var lit=literalMatch(w);
+          if(lit && terms.indexOf(lit.toLowerCase())===-1) terms.push(lit.toLowerCase());
+        });
+        if(terms.length){
+          var pair=null;
+          for(var i=0;i<terms.length && !pair;i++){
+            for(var j=i+1;j<terms.length;j++){
+              if(blocks.some(function(b){return b.el.dataset.search.indexOf(terms[i])!==-1 && b.el.dataset.search.indexOf(terms[j])!==-1;})){
+                pair=[terms[i],terms[j]]; break;
+              }
+            }
+          }
+          var term=pair?pair.join(' '):terms[0];
+          div.appendChild(searchBtn(term,panel,sbtn));
+        } else {
+          var m2=document.createElement('p'); m2.className='hint'; m2.textContent='No encuentro ningún término de este fragmento en la chuleta; prueba a buscar a mano con otra palabra.'; div.appendChild(m2);
+        }
+      } else {
+        cons.forEach(function(c){var s=document.createElement('span'); s.className='sv-chip'; s.textContent=c.label; div.appendChild(s);});
+        var tips=cons.filter(function(c){return c.tip;});
+        if(tips.length){var ul=document.createElement('ul'); ul.className='sv-tips';
+          tips.slice(0,4).forEach(function(c){var li=document.createElement('li'); li.textContent=c.tip; ul.appendChild(li);}); div.appendChild(ul);}
+        var rec=rank(cons,pn,score[top]>0?top:null), w=document.createElement('div');
+        rec.forEach(function(b){w.appendChild(goBtn(b));}); div.appendChild(w);
+      }
+      out.appendChild(div);
+    });
+    var note=document.createElement('p'); note.className='hint'; note.textContent='Es una detección por palabras clave: léete el enunciado completo y comprueba que no falta ningún requisito.'; out.appendChild(note);
+  }
+  var panel=document.getElementById('solver'), sbtn=document.getElementById('solveBtn');
+  sbtn.addEventListener('click',function(){
+    var open=panel.classList.toggle('open'); sbtn.setAttribute('aria-expanded',open);
+    if(open){window.scrollTo(0,0); document.getElementById('sv-text').focus();}
+  });
+  document.getElementById('sv-go').addEventListener('click',analizar);
+  document.getElementById('sv-clear').addEventListener('click',function(){
+    document.getElementById('sv-text').value=''; document.getElementById('sv-out').innerHTML='';
+    try{localStorage.removeItem('chuleta-sv-text');}catch(e){}
+  });
+  var svText=document.getElementById('sv-text');
+  svText.addEventListener('keydown',function(e){
+    if((e.ctrlKey||e.metaKey) && e.key==='Enter'){e.preventDefault(); analizar();}
+  });
+  try{
+    var savedText=localStorage.getItem('chuleta-sv-text');
+    if(savedText) svText.value=savedText;
+  }catch(e){}
+  svText.addEventListener('input',function(){
+    try{localStorage.setItem('chuleta-sv-text',svText.value);}catch(e){}
+  });
+
+  var start=location.hash.slice(1);
+  if(!TABS[start]){ try{start=localStorage.getItem('chuleta-tab');}catch(e){} }
+  setTab(TABS[start]?start:'jdbc', true);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,3228 @@
+<!doctype html>
+<html lang="es" data-tab="jdbc">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chuleta Acceso a Datos — Completa (JDBC, MongoDB, JSON y Ejercicios)</title>
+<style>
+:root{--bg:#f3f5f7;--panel:#fff;--text:#14202b;--muted:#586674;--border:#dbe1e7;--hl:#fde68a;
+ --code-bg:#0f1720;--code-text:#d7e0ea;--code-border:#0f1720;
+ --c:#6f8296;--s:#9fd88f;--n:#f4b46a;--k:#8fb8ff;--t:#7fd6d0;--f:#e8d28a;--a:#d6a1f0;
+ --accent:#1f5fd1;--accent-soft:#e6eefc;--on-accent:#fff}
+html[data-tab=mongodb]{--accent:#0b7a43;--accent-soft:#e2f4ea}
+html[data-tab=json]{--accent:#9a5b00;--accent-soft:#fbefd9}
+html[data-tab=ejercicios]{--accent:#6d28d9;--accent-soft:#ede9fe}
+@media (prefers-color-scheme:dark){
+:root{--bg:#0d1216;--panel:#141b21;--text:#e6ebf0;--muted:#93a1ad;--border:#27323b;--hl:#6b5200;--code-bg:#0a0f13;--code-border:#27323b;
+ --accent:#6ea2ff;--accent-soft:#17263f;--on-accent:#0d1216}
+html[data-tab=mongodb]{--accent:#4cd08a;--accent-soft:#12291f}
+html[data-tab=json]{--accent:#f2b24c;--accent-soft:#2e2412}
+html[data-tab=ejercicios]{--accent:#a78bfa;--accent-soft:#2e1065;--on-accent:#0d1216}}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:128px}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.6 "Segoe UI Variable Text","Segoe UI",system-ui,-apple-system,Roboto,sans-serif}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.top{position:sticky;top:0;z-index:10;background:var(--panel);border-bottom:1px solid var(--border)}
+.bar{max-width:1300px;margin:0 auto;padding:12px 20px 4px;display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.bar h1{font-size:18px;font-weight:700;letter-spacing:-.01em;margin:0;white-space:nowrap}
+.search{position:relative;flex:1;min-width:200px;max-width:560px;margin-left:auto}
+#q{width:100%;padding:9px 38px 9px 14px;border:1px solid var(--border);border-radius:999px;background:var(--bg);color:var(--text);font:inherit}
+#q:focus{outline:2px solid var(--accent);border-color:transparent}
+.search kbd{position:absolute;right:12px;top:50%;transform:translateY(-50%);font:12px ui-monospace,Consolas,monospace;color:var(--muted);border:1px solid var(--border);border-radius:4px;padding:0 6px;pointer-events:none}
+#count{color:var(--muted);font-size:13px;min-width:80px}
+.tabs{max-width:1300px;margin:0 auto;padding:0 12px;display:flex;gap:4px;overflow-x:auto}
+.tabs button{appearance:none;border:0;background:none;color:var(--muted);font:inherit;font-weight:600;font-size:15px;padding:10px 14px 11px;cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap;display:flex;gap:8px;align-items:center}
+.tabs button:hover{color:var(--text)}
+.tabs button[aria-selected=true]{color:var(--text);border-bottom-color:var(--accent)}
+.tabs button.t-jdbc{--tc:#1f5fd1}.tabs button.t-mongodb{--tc:#0b7a43}.tabs button.t-json{--tc:#9a5b00}.tabs button.t-ejercicios{--tc:#6d28d9}
+@media (prefers-color-scheme:dark){.tabs button.t-jdbc{--tc:#6ea2ff}.tabs button.t-mongodb{--tc:#4cd08a}.tabs button.t-json{--tc:#f2b24c}.tabs button.t-ejercicios{--tc:#a78bfa}}
+.tabs button::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--tc)}
+.tabs small{font-size:12px;font-weight:600;color:var(--muted);background:var(--bg);border:1px solid var(--border);border-radius:999px;padding:0 8px;line-height:18px}
+.tabs button.has small{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+
+.layout{display:flex;gap:32px;max-width:1300px;margin:0 auto;padding:24px 20px 60px}
+nav{width:220px;flex-shrink:0;position:sticky;top:128px;align-self:flex-start;max-height:calc(100vh - 150px);overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column;gap:2px}
+nav a{padding:6px 12px;color:var(--muted);text-decoration:none;border-left:2px solid var(--border);font-size:13.5px;line-height:1.35}
+nav a:hover{color:var(--text)}
+nav a.active{color:var(--text);border-left-color:var(--accent);background:var(--accent-soft);font-weight:600}
+main{flex:1;min-width:0}
+section{margin-bottom:44px}
+section.off,section.hide,.block.hide{display:none}
+section>h2{font-size:24px;font-weight:700;letter-spacing:-.015em;margin:0 0 6px;line-height:1.25}
+section>p.lead{margin:0 0 16px;color:var(--muted);max-width:76ch}
+.block{background:var(--panel);border:1px solid var(--border);border-radius:10px;margin:0 0 18px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.bh{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:11px 15px;border-left:4px solid var(--accent);background:rgba(0,0,0,.015)}
+.bh h3{margin:0;font-size:15px;font-weight:600;line-height:1.35}
+.copy{border:1px solid var(--border);background:var(--bg);color:var(--text);border-radius:6px;padding:4px 12px;font-weight:600;font-size:13px;font-family:inherit;cursor:pointer;white-space:nowrap}
+.copy:hover{border-color:var(--accent);color:var(--accent)}
+.copy.ok{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+pre{margin:0;padding:14px 16px;background:var(--code-bg);color:var(--code-text);border-top:1px solid var(--code-border);overflow:auto;font:13.5px/1.55 "Cascadia Code","JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;tab-size:4}
+pre .c{color:var(--c);font-style:italic}pre .s{color:var(--s)}pre .n{color:var(--n)}pre .k{color:var(--k)}pre .t{color:var(--t)}pre .f{color:var(--f)}pre .a{color:var(--a)}
+ul.checks{margin:0;padding:8px 18px 14px 34px;list-style:disc}
+ul.checks li{padding:4px 0;max-width:85ch}
+ul.checks li::marker{color:var(--accent)}
+code{font:.9em ui-monospace,Consolas,monospace;background:var(--accent-soft);padding:1px 5px;border-radius:4px}
+.note{background:var(--accent-soft);border-left:4px solid var(--accent);border-radius:6px;padding:11px 15px;margin:0 0 16px;font-size:14.5px;max-width:85ch}
+.note code{background:var(--panel)}
+.chip{display:none;font-size:12px;font-weight:600;margin-left:8px;vertical-align:middle;color:var(--muted)}
+#empty{display:none;padding:32px;border:1px dashed var(--border);border-radius:10px;text-align:center;color:var(--muted)}
+#empty button{margin:8px 4px 0;border:1px solid var(--border);background:var(--panel);color:var(--text);font:inherit;padding:4px 12px;border-radius:999px;cursor:pointer}
+
+.solve-btn{border:0;background:var(--accent);color:var(--on-accent);font-weight:600;font-size:14px;font-family:inherit;padding:8px 16px;border-radius:999px;cursor:pointer;white-space:nowrap}
+.solve-btn[aria-expanded=true]{outline:2px solid var(--accent);outline-offset:2px;background:var(--panel);color:var(--text)}
+#solver{display:none;background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:18px;margin:0 0 28px}
+#solver.open{display:block}
+#solver h2{font-size:18px;margin:0 0 4px}
+#solver .hint{margin:0 0 10px;color:var(--muted);font-size:14px;max-width:76ch}
+#sv-text{width:100%;min-height:130px;resize:vertical;padding:12px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font:inherit}
+.sv-actions{display:flex;gap:8px;margin-top:10px}
+.sv-actions button,.sv-go{border:1px solid var(--border);background:var(--bg);color:var(--text);font-family:inherit;font-size:13.5px;font-weight:600;padding:5px 14px;border-radius:999px;cursor:pointer}
+.sv-actions .primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.sv-go:hover,.sv-actions button:hover{border-color:var(--accent)}
+#sv-out{margin-top:16px}
+.sv-tech{margin:0 0 6px;font-size:15px}
+.sv-part{border-top:1px solid var(--border);padding:14px 0 4px}
+.sv-part blockquote{margin:0 0 8px;color:var(--muted);font-size:14px;border-left:3px solid var(--border);padding-left:10px}
+.sv-chip{display:inline-block;font-size:12.5px;font-weight:600;background:var(--accent-soft);border-radius:999px;padding:1px 10px;margin:0 6px 6px 0}
+.sv-tips{margin:4px 0 8px;padding-left:20px;font-size:14px}
+.sv-go{display:inline-block;margin:0 6px 8px 0;text-align:left}
+.sv-go small{color:var(--muted);font-weight:500;margin-left:6px}
+.flash{outline:3px solid var(--accent);outline-offset:2px}
+
+/* Estilos especificos para explicaciones y ejercicios detallados */
+.ex-box{background:var(--panel);border:1px solid var(--border);border-radius:10px;margin:0 0 20px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.04)}
+.ex-header{padding:12px 16px;background:var(--accent-soft);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+.ex-header h3{margin:0;font-size:16px;font-weight:700}
+.ex-tag{font-size:12px;font-weight:600;background:var(--panel);border:1px solid var(--border);padding:2px 8px;border-radius:6px;color:var(--muted)}
+.ex-body{padding:14px 16px}
+.ex-statement{margin:0 0 12px;padding:10px 14px;background:var(--bg);border-left:3px solid var(--accent);border-radius:0 6px 6px 0;font-size:14.5px;font-weight:500}
+.ex-explain{margin:0 0 14px;font-size:14px;line-height:1.6}
+.ex-explain ol,.ex-explain ul{margin:6px 0 10px;padding-left:22px}
+.ex-explain li{padding:2px 0}
+.ex-warn{background:#fff8db;border-left:4px solid #eab308;padding:9px 13px;border-radius:4px;margin:10px 0;font-size:13.5px;color:#713f12}
+@media (prefers-color-scheme:dark){.ex-warn{background:#2a2007;color:#fde047;border-left-color:#eab308}}
+
+@media (max-width:860px){
+ .layout{flex-direction:column;gap:12px;padding:14px 12px 48px}
+ nav{position:static;width:auto;max-height:none;flex-direction:row;overflow-x:auto;gap:6px}
+ nav a{border:1px solid var(--border);border-radius:999px;white-space:nowrap;padding:4px 12px}
+ nav a.active{border-color:var(--accent)}
+ .bar{padding:10px 12px 4px}.bar h1{font-size:16px}
+ html{scroll-padding-top:150px}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="bar">
+    <h1>Chuleta de Acceso a Datos</h1>
+    <div class="search">
+      <input id="q" type="search" placeholder="Buscar: transaccion, Filters.gt, sort, JsonPath, rollback, DAO, fechas..." autocomplete="off" aria-label="Buscar en la chuleta">
+      <kbd>/</kbd>
+    </div>
+    <span id="count" aria-live="polite"></span>
+    <button id="solveBtn" class="solve-btn" type="button" aria-expanded="false" aria-controls="solver">Analizar enunciado</button>
+  </div>
+  <div class="tabs" id="tabs" role="tablist">
+    <button role="tab" data-tab="jdbc" class="t-jdbc">JDBC <small></small></button>
+    <button role="tab" data-tab="mongodb" class="t-mongodb">MongoDB <small></small></button>
+    <button role="tab" data-tab="json" class="t-json">JSON <small></small></button>
+    <button role="tab" data-tab="ejercicios" class="t-ejercicios">Ejercicios <small></small></button>
+  </div>
+</header>
+<div class="layout">
+<nav id="nav" aria-label="Secciones de navegación"></nav>
+<main>
+<div id="solver">
+  <h2>Analizar enunciado</h2>
+  <p class="hint">Pega el enunciado completo del ejercicio (con apartados a, b, c...). Detecta conceptos clave (fechas, filtros, transacciones, arrays, agregaciones...) y te indica exactamente qué método y qué bloque usar sin conexión. <kbd style="font:12px ui-monospace,Consolas,monospace;border:1px solid var(--border);border-radius:4px;padding:0 5px;">Ctrl+Enter</kbd> para analizar.</p>
+  <textarea id="sv-text" placeholder="Ej.: Al insertar un puerto, comprobar que la etapa existe y no tiene más de 2 puertos de 1ª categoría..." aria-label="Enunciado del ejercicio"></textarea>
+  <div class="sv-actions"><button class="primary" id="sv-go" type="button">Analizar</button><button id="sv-clear" type="button">Limpiar</button></div>
+  <div id="sv-out" aria-live="polite"></div>
+</div>
+<div id="empty"></div>
+
+<!-- ========================================== -->
+<!-- SECCIONES JDBC                            -->
+<!-- ========================================== -->
+<section id="dep-jdbc" data-tab="jdbc">
+<h2>Dependencia Maven</h2>
+<p class="lead">Driver MySQL Connector/J oficial y Pool de Conexiones DBCP (usado en las prácticas de Ciclismo).</p>
+
+<script type="text/plain" class="code" data-title="pom.xml — mysql-connector-j + commons-dbcp" data-tags="maven pom dependency mysql jdbc driver dbcp datasource basicdatasource" data-lang="xml">
+<dependencies>
+    <!-- Conector JDBC MySQL 8.x -->
+    <dependency>
+        <groupId>com.mysql</groupId>
+        <artifactId>mysql-connector-j</artifactId>
+        <version>8.4.0</version>
+    </dependency>
+
+    <!-- Pool de conexiones Apache DBCP (para BasicDataSourceFactory) -->
+    <dependency>
+        <groupId>commons-dbcp</groupId>
+        <artifactId>commons-dbcp</artifactId>
+        <version>1.4</version>
+    </dependency>
+</dependencies>
+</script>
+</section>
+
+<section id="jdbc-base" data-tab="jdbc">
+<h2>JDBC (MySQL) — Fundamentos y Operaciones</h2>
+<p class="lead">Conexión estándar o por DataSource, consultas parametrizadas, lectura y modificación de datos.</p>
+
+<script type="text/plain" class="code" data-title="Plantilla: conexión con DriverManager y cierre seguro" data-tags="jdbc conexion connection drivermanager imports finally close try-with-resources" data-lang="java">
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
+public class ConexionSimple {
+    // Parámetros de conexión a MySQL
+    private static final String URL = "jdbc:mysql://localhost:3306/ciclismo?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC";
+    private static final String USER = "root";
+    private static final String PASS = "mysql"; // o tu contraseña local
+
+    public static void main(String[] args) {
+        // Uso de try-with-resources: cierra automáticamente con, pstmt y rs
+        String sql = "SELECT dorsal, nombre, nomeq FROM ciclista WHERE nomeq = ?";
+
+        try (Connection con = DriverManager.getConnection(URL, USER, PASS);
+             PreparedStatement pstmt = con.prepareStatement(sql)) {
+
+            pstmt.setString(1, "Banesto");
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    int dorsal = rs.getInt("dorsal");
+                    String nombre = rs.getString("nombre");
+                    String equipo = rs.getString("nomeq");
+                    System.out.println(dorsal + " - " + nombre + " (" + equipo + ")");
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Error SQL [" + e.getErrorCode() + "]: " + e.getMessage());
+        }
+    }
+}
+</script>
+
+<script type="text/plain" class="code" data-title="Conexión con BasicDataSourceFactory y archivo de propiedades" data-tags="datasource basicdatasourcefactory propiedades pool conexion ciclismodb properties" data-lang="java">
+import java.io.FileInputStream;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.Properties;
+import javax.sql.DataSource;
+import org.apache.commons.dbcp.BasicDataSourceFactory;
+
+public class ConexionPoolProperties {
+    // Archivo Configuracion/propiedadesCiclismo.txt contiene:
+    // driverClassName=com.mysql.cj.jdbc.Driver
+    // url=jdbc:mysql://localhost:3306/ciclismo
+    // username=root
+    // password=mysql
+
+    public static Connection obtenerConexion() throws Exception {
+        Properties prop = new Properties();
+        prop.load(new FileInputStream("Configuracion\\propiedadesCiclismo.txt"));
+        DataSource ds = BasicDataSourceFactory.createDataSource(prop);
+        return ds.getConnection();
+    }
+}
+</script>
+
+<script type="text/plain" class="code" data-title="Pedir datos por teclado (Scanner) sin errores de buffer" data-tags="scanner teclado nextint nextline nextdouble input usuario buffer" data-lang="java">
+Scanner tec = new Scanner(System.in);
+
+System.out.print("Introduce un dorsal (entero): ");
+int dorsal = tec.nextInt();
+tec.nextLine(); // ¡CRÍTICO! Limpia el salto de línea pendiente antes de leer un String
+
+System.out.print("Introduce el nombre del ciclista (texto): ");
+String nombre = tec.nextLine(); // Ahora sí lee correctamente el texto del usuario
+
+System.out.print("Introduce el precio o premio (decimal): ");
+double premio = tec.nextDouble();
+tec.nextLine(); // Vuelve a limpiar tras leer un número
+</script>
+
+<script type="text/plain" class="code" data-title="SELECT parametrizado (PreparedStatement) con índices y tipos" data-tags="select preparedstatement setint setstring executequery resultset natural join" data-lang="java">
+String sql = "SELECT c.dorsal, c.nombre, e.nomeq " +
+             "FROM ciclista c " +
+             "JOIN equipo e ON c.nomeq = e.nomeq " +
+             "WHERE c.dorsal > ? AND e.director = ?";
+
+try (PreparedStatement pstmt = con.prepareStatement(sql)) {
+    // Los índices de los parámetros '?' EMPIEZAN EN 1 (no en 0)
+    pstmt.setInt(1, 10);              // Primer interrogante: dorsal > 10
+    pstmt.setString(2, "Eusebio Unzué"); // Segundo interrogante: director
+
+    try (ResultSet rs = pstmt.executeQuery()) {
+        while (rs.next()) {
+            // Lectura por nombre de columna o índice de columna
+            int dorsal = rs.getInt(1);          // Columna 1
+            String ciclista = rs.getString(2);  // Columna 2
+            String equipo = rs.getString("nomeq"); // Por nombre
+            System.out.println(dorsal + ": " + ciclista + " -> " + equipo);
+        }
+    }
+}
+</script>
+
+<script type="text/plain" class="code" data-title="GROUP BY + COUNT (Agrupaciones con funciones de agregado)" data-tags="group by count r2 equipo ciclistas agregacion" data-lang="java">
+// Consulta cuántos ciclistas tiene cada equipo
+String sql = "SELECT nomeq, COUNT(*) AS total FROM ciclista GROUP BY nomeq ORDER BY total DESC";
+
+try (PreparedStatement pstmt = con.prepareStatement(sql);
+     ResultSet rs = pstmt.executeQuery()) {
+    while (rs.next()) {
+        String equipo = rs.getString("nomeq");
+        int total = rs.getInt("total");
+        System.out.println("Equipo: " + equipo + " | Ciclistas: " + total);
+    }
+}
+</script>
+
+<script type="text/plain" class="code" data-title="HAVING: Filtrado sobre el resultado de una función de agregado" data-tags="having group by count r3 etapas ganadas only_full_group_by" data-lang="java">
+// REGLA CLAVE: WHERE filtra filas individuales ANTES de agrupar;
+// HAVING filtra grupos DESPUÉS de aplicar el COUNT/SUM/AVG.
+String sql = "SELECT c.nomeq, c.nombre, e.dorsal, COUNT(e.netapa) AS etapas_ganadas " +
+             "FROM ciclista c " +
+             "JOIN etapa e ON c.dorsal = e.dorsal " +
+             "GROUP BY e.dorsal, c.nombre, c.nomeq " +
+             "HAVING COUNT(e.netapa) > ?";
+
+try (PreparedStatement pstmt = con.prepareStatement(sql)) {
+    pstmt.setInt(1, 2); // Ciclistas que hayan ganado más de 2 etapas
+    try (ResultSet rs = pstmt.executeQuery()) {
+        while (rs.next()) {
+            System.out.println(rs.getString("nombre") + " (" + rs.getString("nomeq") + ") -> " + rs.getInt("etapas_ganadas") + " etapas");
+        }
+    }
+}
+</script>
+
+<script type="text/plain" class="code" data-title="Método helper: comprobar si existe un registro (reutilizable)" data-tags="existe exists count comprobar metodo helper validar clave foranea" data-lang="java">
+// Devuelve true si la condición se cumple al menos una vez en la base de datos
+public static boolean existeRegistro(Connection con, String sql, Object... params) throws SQLException {
+    try (PreparedStatement pstmt = con.prepareStatement(sql)) {
+        for (int i = 0; i < params.length; i++) {
+            pstmt.setObject(i + 1, params[i]);
+        }
+        try (ResultSet rs = pstmt.executeQuery()) {
+            if (rs.next()) {
+                // Si la consulta fue SELECT COUNT(*), es > 0; si fue SELECT 1, simplemente true
+                return rs.getInt(1) > 0;
+            }
+        }
+    }
+    return false;
+}
+
+// Ejemplo de uso directo en validaciones previas a un INSERT:
+// boolean ciclistaOk = existeRegistro(con, "SELECT COUNT(*) FROM ciclista WHERE dorsal = ?", dorsalEntrada);
+// boolean etapaOk = existeRegistro(con, "SELECT COUNT(*) FROM etapa WHERE netapa = ?", etapaEntrada);
+</script>
+
+<script type="text/plain" class="code" data-title="Obtener un valor escalar único (COUNT / SUM / MAX)" data-tags="count sum max coalesce valor unico escalar acumulador" data-lang="java">
+// Devuelve un valor numérico único. COALESCE evita recibir NULL cuando la tabla está vacía o no hay filas
+String sql = "SELECT COALESCE(SUM(km), 0) FROM etapa";
+
+try (PreparedStatement pstmt = con.prepareStatement(sql);
+     ResultSet rs = pstmt.executeQuery()) {
+    if (rs.next()) {
+        int totalKm = rs.getInt(1);
+        System.out.println("Kilómetros totales acumulados: " + totalKm);
+    }
+}
+</script>
+
+<script type="text/plain" class="code" data-title="INSERT, UPDATE, DELETE (executeUpdate y filas afectadas)" data-tags="insert update delete executeupdate filas afectadas modificar" data-lang="java">
+String sqlInsert = "INSERT INTO maillot (codigo, tipo, color, premio) VALUES (?, ?, ?, ?)";
+
+try (PreparedStatement pstmt = con.prepareStatement(sqlInsert)) {
+    pstmt.setString(1, "RE");
+    pstmt.setString(2, "Regularidad");
+    pstmt.setString(3, "Azul");
+    pstmt.setInt(4, 20000);
+
+    int filas = pstmt.executeUpdate(); // Devuelve el número de filas insertadas o modificadas
+    if (filas > 0) {
+        System.out.println("Maillot registrado con éxito.");
+    } else {
+        System.out.println("No se insertó ninguna fila.");
+    }
+}
+</script>
+</section>
+
+<section id="jdbc-scroll-updatable" data-tab="jdbc">
+<h2>ResultSets Desplazables y Actualizables (Scrollable & Updatable)</h2>
+<p class="lead">Navegación bidireccional, modificación de filas en vivo e inserción directa sin escribir sentencias SQL INSERT/UPDATE.</p>
+
+<div class="note">
+Para poder desplazarte en ambas direcciones o editar el ResultSet, debes configurar el Statement con:
+<br><code>con.prepareStatement(sql, ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_UPDATABLE)</code>.
+</div>
+
+<script type="text/plain" class="code" data-title="Navegación bidireccional y posicionamiento absoluto/relativo" data-tags="scrollable type_scroll_sensitive first last previous relative absolute getrow" data-lang="java">
+String sql = "SELECT dorsal, nombre, nacimiento FROM ciclista ORDER BY nacimiento DESC";
+
+try (PreparedStatement pstmt = con.prepareStatement(sql, 
+        ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+     ResultSet rs = pstmt.executeQuery()) {
+
+    // 1. Ir al primer registro
+    if (rs.first()) {
+        System.out.println("Más joven (fila " + rs.getRow() + "): " + rs.getString("nombre"));
+    }
+
+    // 2. Ir al último registro
+    if (rs.last()) {
+        System.out.println("Más veterano (fila " + rs.getRow() + "): " + rs.getString("nombre"));
+    }
+
+    // 3. Retroceder un registro desde el final
+    if (rs.previous()) {
+        System.out.println("Penúltimo ciclista: " + rs.getString("nombre"));
+    }
+
+    // 4. Salto relativo (ej. retroceder 2 posiciones)
+    if (rs.relative(-2)) {
+        System.out.println("Fila actual tras salto relativo(-2): " + rs.getRow());
+    }
+
+    // 5. Salto absoluto (ej. ir directamente a la fila 5)
+    if (rs.absolute(5)) {
+        System.out.println("Quinto ciclista (fila 5): " + rs.getString("nombre"));
+    }
+
+    // Métodos de comprobación de frontera:
+    // rs.isFirst(), rs.isLast(), rs.isBeforeFirst(), rs.isAfterLast()
+}
+</script>
+
+<script type="text/plain" class="code" data-title="Actualizar filas directamente en el ResultSet (updateRow)" data-tags="updaterow updatable concur_updatable modificar resultset directo" data-lang="java">
+String sql = "SELECT codigo, premio FROM maillot";
+
+try (PreparedStatement pstmt = con.prepareStatement(sql, 
+        ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_UPDATABLE);
+     ResultSet rs = pstmt.executeQuery()) {
+
+    while (rs.next()) {
+        String cod = rs.getString("codigo");
+        int premioActual = rs.getInt("premio");
+
+        if (cod.equals("RE")) {
+            int nuevoPremio = premioActual + 5000;
+            // Modificamos el valor de la columna en el buffer del ResultSet
+            rs.updateInt("premio", nuevoPremio);
+            // Confirmamos la actualización física en la base de datos
+            rs.updateRow();
+            System.out.println("Premio de RE actualizado a: " + nuevoPremio);
+        }
+    }
+}
+</script>
+
+<script type="text/plain" class="code" data-title="Insertar nueva fila desde el ResultSet (insertRow)" data-tags="insertrow movetoinsertrow concur_updatable insertar fila resultset" data-lang="java">
+String sql = "SELECT nomeq, director FROM equipo";
+
+try (PreparedStatement pstmt = con.prepareStatement(sql, 
+        ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_UPDATABLE);
+     ResultSet rs = pstmt.executeQuery()) {
+
+    // 1. Movemos el cursor al búfer de inserción temporal
+    rs.moveToInsertRow();
+
+    // 2. Asignamos los valores para cada columna de la nueva fila
+    rs.updateString("nomeq", "CicliValencia");
+    rs.updateString("director", "Vicent");
+
+    // 3. Enviamos la nueva fila físicamente a la tabla MySQL
+    rs.insertRow();
+
+    // 4. Devolvemos el cursor a la fila donde estábamos antes de insertar
+    rs.moveToCurrentRow();
+
+    System.out.println("Nuevo equipo insertado mediante insertRow()");
+}
+</script>
+
+<script type="text/plain" class="code" data-title="Borrar filas en vivo (deleteRow)" data-tags="deleterow updatable borrar fila actual resultset" data-lang="java">
+// Para borrar la fila donde se encuentra el cursor actualmente:
+// rs.deleteRow(); 
+// Nota: La fila se elimina de inmediato de la base de datos subyacente.
+</script>
+</section>
+
+<section id="jdbc-fechas" data-tab="jdbc">
+<h2>Manejo de Fechas en JDBC (Date, Timestamp, LocalDateTime)</h2>
+<p class="lead">Conversión, formateo y persistencia entre la capa de interfaz, modelos POJO y la base de datos MySQL.</p>
+
+<div class="note">
+En MySQL, las columnas tipo <code>DATE</code> almacenan año, mes y día; las tipo <code>DATETIME</code> o <code>TIMESTAMP</code> almacenan fecha y hora exacta. En JDBC debes usar <code>java.sql.Date</code> para solo fecha y <code>java.sql.Timestamp</code> para fecha y hora.
+</div>
+
+<script type="text/plain" class="code" data-title="Conversión de String a java.util.Date y java.sql.Date" data-tags="simpledateformat date util sql gettime parse formato" data-lang="java">
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
+// 1. Leemos la fecha como String de la interfaz (formato dd/MM/yyyy)
+String strFecha = "24/11/2026";
+SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+Date utilDate = sdf.parse(strFecha); // Objeto java.util.Date
+
+// 2. Conversión a java.sql.Date para pasar a PreparedStatement
+java.sql.Date sqlDate = new java.sql.Date(utilDate.getTime());
+
+// 3. Establecer en PreparedStatement
+pstmt.setDate(1, sqlDate);
+
+// 4. Leer fecha de ResultSet y convertir a java.util.Date
+java.sql.Date bdDate = rs.getDate("fecha");
+Date fechaPojo = (Date) bdDate;
+</script>
+
+<script type="text/plain" class="code" data-title="Manejo moderno con LocalDateTime y java.sql.Timestamp" data-tags="localdatetime timestamp datetimeformatter parse valueof totimestamp" data-lang="java">
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.sql.Timestamp;
+
+// 1. Lectura de fecha y hora como String
+String str = "2026-11-16 23:30:00";
+DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+LocalDateTime ldt = LocalDateTime.parse(str, formatter);
+
+// 2. Para escribir en PreparedStatement (se convierte a Timestamp)
+pstmt.setTimestamp(1, Timestamp.valueOf(ldt));
+
+// 3. Para leer de ResultSet hacia LocalDateTime
+Timestamp ts = rs.getTimestamp("fechaSalida");
+LocalDateTime fechaRecuperada = (ts != null) ? ts.toLocalDateTime() : null;
+</script>
+
+<script type="text/plain" class="code" data-title="DAO completo con fechas: Salida (grabar, buscarPorId, buscarEntreFechas)" data-tags="dao salida pojo fechas between buscar grabar timestamp" data-lang="java">
+public class SalidaDAO {
+    private Connection con;
+
+    public SalidaDAO(Connection con) { this.con = con; }
+
+    // Grabar salida con LocalDateTime
+    public void grabar(int usuario, int articulo, LocalDateTime fechaSalida) throws SQLException {
+        String sql = "INSERT INTO salida (usuario, articulo, fechaSalida) VALUES (?, ?, ?)";
+        try (PreparedStatement pstmt = con.prepareStatement(sql)) {
+            pstmt.setInt(1, usuario);
+            pstmt.setInt(2, articulo);
+            pstmt.setTimestamp(3, Timestamp.valueOf(fechaSalida));
+            pstmt.executeUpdate();
+        }
+    }
+
+    // Consulta entre dos fechas con BETWEEN
+    public void buscarEntreFechas(LocalDateTime desde, LocalDateTime hasta) throws SQLException {
+        String sql = "SELECT articulo, usuario, fechaSalida FROM salida WHERE fechaSalida BETWEEN ? AND ?";
+        try (PreparedStatement pstmt = con.prepareStatement(sql)) {
+            pstmt.setTimestamp(1, Timestamp.valueOf(desde));
+            pstmt.setTimestamp(2, Timestamp.valueOf(hasta));
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    int art = rs.getInt("articulo");
+                    int usu = rs.getInt("usuario");
+                    LocalDateTime fSal = rs.getTimestamp("fechaSalida").toLocalDateTime();
+                    System.out.println("Art: " + art + " | Usuario: " + usu + " | Fecha: " + fSal);
+                }
+            }
+        }
+    }
+}
+</script>
+</section>
+
+<section id="jdbc-restricciones" data-tab="jdbc">
+<h2>Controles y Restricciones de Negocio</h2>
+<p class="lead">Validaciones complejas antes de insertar o modificar datos en la base de datos de Ciclismo.</p>
+
+<script type="text/plain" class="code" data-title="Control de clave duplicada: SELECT previo vs catch de violación de integridad" data-tags="sqlintegrityconstraintviolationexception 1062 duplicate entry clave duplicada catch errorcode sqlstate" data-lang="java">
+// Enfoque 1: Comprobación previa (Recomendado para mostrar mensajes amigables)
+String sqlCheck = "SELECT COUNT(*) FROM maillot WHERE codigo = ?";
+try (PreparedStatement check = con.prepareStatement(sqlCheck)) {
+    check.setString(1, "RE");
+    try (ResultSet rs = check.executeQuery()) {
+        if (rs.next() && rs.getInt(1) > 0) {
+            System.out.println("Error: El código de maillot 'RE' ya existe.");
+            return;
+        }
+    }
+}
+
+// Enfoque 2: Capturar excepción de MySQL en caso de concurrencia
+try {
+    // pstmt.executeUpdate()...
+} catch (java.sql.SQLIntegrityConstraintViolationException e) {
+    if (e.getErrorCode() == 1062) { // 1062 = Clave duplicada en MySQL
+        System.err.println("Registro duplicado: clave primaria o UNIQUE ya existente.");
+    } else {
+        System.err.println("Violación de clave foránea o regla de integridad: " + e.getMessage());
+    }
+}
+</script>
+
+<script type="text/plain" class="code" data-title="1a — Insertar puerto: etapa existe y máx. 2 puertos de 1ª categoría" data-tags="puerto insertar etapa existe categoria 1 maximo 2 restriccion" data-lang="java">
+int netapa = 3;
+String nompuerto = "Morcuera";
+int altura = 1796;
+String pendiente = "6.5%";
+String categoria = "1";
+
+// 1. Validar que la etapa existe
+String sqlEtapa = "SELECT COUNT(*) FROM etapa WHERE netapa = ?";
+try (PreparedStatement p1 = con.prepareStatement(sqlEtapa)) {
+    p1.setInt(1, netapa);
+    try (ResultSet rs = p1.executeQuery()) {
+        if (!rs.next() || rs.getInt(1) == 0) {
+            System.out.println("Error: La etapa " + netapa + " no existe.");
+            return;
+        }
+    }
+}
+
+// 2. Si es de 1ª categoría, comprobar que la etapa no tenga ya 2 de esa categoría
+if ("1".equals(categoria)) {
+    String sqlCat = "SELECT COUNT(*) FROM puerto WHERE netapa = ? AND categoria = '1'";
+    try (PreparedStatement p2 = con.prepareStatement(sqlCat)) {
+        p2.setInt(1, netapa);
+        try (ResultSet rs = p2.executeQuery()) {
+            if (rs.next() && rs.getInt(1) >= 2) {
+                System.out.println("Error: La etapa " + netapa + " ya tiene 2 puertos de 1ª categoría.");
+                return;
+            }
+        }
+    }
+}
+
+// 3. Insertar el puerto
+String sqlInsert = "INSERT INTO puerto (nompuerto, altura, pendiente, netapa, categoria) VALUES (?, ?, ?, ?, ?)";
+try (PreparedStatement p3 = con.prepareStatement(sqlInsert)) {
+    p3.setString(1, nompuerto);
+    p3.setInt(2, altura);
+    p3.setString(3, pendiente);
+    p3.setInt(4, netapa);
+    p3.setString(5, categoria);
+    p3.executeUpdate();
+    System.out.println("Puerto insertado correctamente.");
+}
+</script>
+
+<script type="text/plain" class="code" data-title="1b — Insertar etapa: km entre 100 y 300 y total vuelta ≤ 1500" data-tags="etapa km 100 300 1500 suma total restriccion insertar" data-lang="java">
+int netapa = 12;
+int km = 180;
+String salida = "Benidorm";
+String llegada = "Alcoy";
+
+// Restricción 1: km individuales entre 100 y 300
+if (km < 100 || km > 300) {
+    System.out.println("Error: Los km de la etapa deben estar entre 100 y 300.");
+    return;
+}
+
+// Restricción 2: suma total de la vuelta no supere 1500 con esta etapa
+String sqlTotal = "SELECT COALESCE(SUM(km), 0) FROM etapa";
+try (PreparedStatement p = con.prepareStatement(sqlTotal);
+     ResultSet rs = p.executeQuery()) {
+    if (rs.next()) {
+        int sumaActual = rs.getInt(1);
+        if (sumaActual + km > 1500) {
+            System.out.println("Error: Supera los 1500 km totales de la vuelta (actual: " + sumaActual + ").");
+            return;
+        }
+    }
+}
+
+// Inserción de la etapa
+String sqlIns = "INSERT INTO etapa (netapa, km, salida, llegada) VALUES (?, ?, ?, ?)";
+try (PreparedStatement p = con.prepareStatement(sqlIns)) {
+    p.setInt(1, netapa);
+    p.setInt(2, km);
+    p.setString(3, salida);
+    p.setString(4, llegada);
+    p.executeUpdate();
+    System.out.println("Etapa registrada con éxito.");
+}
+</script>
+
+<script type="text/plain" class="code" data-title="1c — Categoría automática según altura del puerto" data-tags="categoria automatica altura puerto E 1 2 3" data-lang="java">
+public static String calcularCategoria(int altura) {
+    if (altura > 1500) {
+        return "E"; // Especial
+    } else if (altura >= 1000) {
+        return "1"; // Primera categoría
+    } else if (altura >= 800) {
+        return "2"; // Segunda categoría
+    } else {
+        return "3"; // Tercera categoría
+    }
+}
+</script>
+
+<script type="text/plain" class="code" data-title="2 — Actualizar tabla gana con el total de premios por ciclista" data-tags="gana premios maillot suma total update insert on duplicate key replace into" data-lang="java">
+// Consulta la suma de premios de los maillots que ha llevado cada ciclista e inserta/actualiza en 'gana'
+String sql = "INSERT INTO gana (dorsal, premio) " +
+             "SELECT l.dorsal, SUM(m.premio) " +
+             "FROM llevar l " +
+             "JOIN maillot m ON l.codigo = m.codigo " +
+             "GROUP BY l.dorsal " +
+             "ON DUPLICATE KEY UPDATE premio = VALUES(premio)";
+
+try (PreparedStatement pstmt = con.prepareStatement(sql)) {
+    int filas = pstmt.executeUpdate();
+    System.out.println("Tabla gana actualizada (" + filas + " registros procesados).");
+}
+</script>
+</section>
+
+<section id="jdbc-transacciones" data-tab="jdbc">
+<h2>Transacciones ACID en JDBC</h2>
+<p class="lead">Garantizar que un grupo de operaciones se ejecute completamente o se revierta en su totalidad ante cualquier error.</p>
+
+<script type="text/plain" class="code" data-title="Patrón general de transacción segura con rollback y finally" data-tags="transaccion setautocommit commit rollback savepoint atomica" data-lang="java">
+Connection con = null;
+try {
+    con = ConexionPoolProperties.obtenerConexion();
+    // 1. DESACTIVAR auto-commit para abrir la transacción
+    con.setAutoCommit(false);
+
+    // 2. Operación A
+    try (PreparedStatement p1 = con.prepareStatement("UPDATE cuenta SET saldo = saldo - 100 WHERE id = 1")) {
+        p1.executeUpdate();
+    }
+
+    // 3. Operación B
+    try (PreparedStatement p2 = con.prepareStatement("UPDATE cuenta SET saldo = saldo + 100 WHERE id = 2")) {
+        p2.executeUpdate();
+    }
+
+    // 4. Si todo ha ido bien, CONFIRMAR cambios
+    con.commit();
+    System.out.println("Transacción completada exitosamente.");
+
+} catch (Exception e) {
+    // 5. Ante cualquier error, DESHACER todos los cambios
+    if (con != null) {
+        try {
+            con.rollback();
+            System.err.println("Rollback ejecutado debido a: " + e.getMessage());
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+    }
+} finally {
+    // 6. Restaurar auto-commit y cerrar conexión
+    if (con != null) {
+        try {
+            con.setAutoCommit(true);
+            con.close();
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+    }
+}
+</script>
+
+<script type="text/plain" class="code" data-title="r5 — Fusión de equipos (absorbente + absorbido en 4 tablas)" data-tags="r5 fusion equipos transaccion absorber ciclista coche representante delete update rollback" data-lang="java">
+String origen = "Banesto";    // Equipo que desaparece
+String destino = "Kelme";     // Equipo que absorbe
+
+try {
+    con.setAutoCommit(false); // Iniciar transacción
+
+    // Paso 1: Mover ciclistas del equipo absorbido al equipo destino
+    try (PreparedStatement p = con.prepareStatement("UPDATE ciclista SET nomeq = ? WHERE nomeq = ?")) {
+        p.setString(1, destino);
+        p.setString(2, origen);
+        p.executeUpdate();
+    }
+
+    // Paso 2: Traspasar coches del equipo absorbido
+    try (PreparedStatement p = con.prepareStatement("UPDATE coche SET nomequipo = ? WHERE nomequipo = ?")) {
+        p.setString(1, destino);
+        p.setString(2, origen);
+        p.executeUpdate();
+    }
+
+    // Paso 3: Traspasar representante
+    try (PreparedStatement p = con.prepareStatement("UPDATE representante SET nom_eq = ? WHERE nom_eq = ?")) {
+        p.setString(1, destino);
+        p.setString(2, origen);
+        p.executeUpdate();
+    }
+
+    // Paso 4: Eliminar el equipo absorbido
+    try (PreparedStatement p = con.prepareStatement("DELETE FROM equipo WHERE nomeq = ?")) {
+        p.setString(1, origen);
+        p.executeUpdate();
+    }
+
+    con.commit(); // Confirmar la fusión
+    System.out.println("Fusión completada con éxito.");
+
+} catch (SQLException e) {
+    try { con.rollback(); } catch (SQLException ex) {}
+    System.err.println("Fallo en la fusión. Se deshicieron todos los cambios: " + e.getMessage());
+}
+</script>
+</section>
+
+<section id="jdbc-metadatos" data-tab="jdbc">
+<h2>Metadatos de Base de Datos y Resultados</h2>
+<p class="lead">Inspección dinámica de tablas, nombres de columnas, tipos y capacidades del servidor.</p>
+
+<script type="text/plain" class="code" data-title="ResultSetMetaData: inspeccionar columnas de cualquier consulta" data-tags="resultsetmetadata metadatos columnas getcolumncount getcolumnname" data-lang="java">
+String sql = "SELECT * FROM ciclista LIMIT 1";
+
+try (PreparedStatement pstmt = con.prepareStatement(sql);
+     ResultSet rs = pstmt.executeQuery()) {
+
+    java.sql.ResultSetMetaData meta = rs.getMetaData();
+    int numCols = meta.getColumnCount();
+
+    System.out.println("Número de columnas: " + numCols);
+    for (int i = 1; i <= numCols; i++) {
+        String colName = meta.getColumnName(i);
+        String colType = meta.getColumnTypeName(i);
+        int nullable = meta.isNullable(i);
+        System.out.println("Columna " + i + ": " + colName + " (" + colType + ", nullable: " + nullable + ")");
+    }
+}
+</script>
+</section>
+
+<section id="errores-jdbc" data-tab="jdbc">
+<h2>Errores Típicos en JDBC</h2>
+<p class="lead">Lista de control de los fallos más habituales en exámenes y prácticas.</p>
+<script type="text/plain" class="code" data-title="Checklist rápido JDBC" data-tags="errores trampas checklist problemas" data-lang="list">
+- Índices de PreparedStatement y ResultSet empiezan en 1 (no en 0) -> SQLException: Parameter index out of range.
+- Olvidar tec.nextLine() tras nextInt() o nextDouble() -> El siguiente nextLine() lee una cadena vacía.
+- SELECT con columnas que no están en el GROUP BY -> Error ONLY_FULL_GROUP_BY en MySQL 8+.
+- Usar executeQuery() en sentencias UPDATE/INSERT -> SQLException: Can not issue data manipulation statements with executeQuery().
+- Olvidar llamar a con.commit() cuando setAutoCommit(false) -> Los cambios nunca se guardan en la base de datos.
+- Fechas: Pasar java.util.Date directamente en vez de new java.sql.Date(utilDate.getTime()).
+- No comprobar rs.next() antes de leer de un ResultSet -> SQLException: Before start of result set.
+- Dejar conexiones abiertas sin cerrar en bloques try-with-resources -> Agotamiento del pool de conexiones.
+</script>
+</section>
+
+<!-- ========================================== -->
+<!-- SECCIONES MONGODB                         -->
+<!-- ========================================== -->
+<section id="dep-mongo" data-tab="mongodb">
+<h2>Dependencia Maven</h2>
+<p class="lead">Driver síncrono oficial de MongoDB para aplicaciones Java modernas.</p>
+
+<script type="text/plain" class="code" data-title="pom.xml — mongodb-driver-sync" data-tags="maven pom dependency mongodb driver driver-sync" data-lang="xml">
+<dependencies>
+    <!-- Driver síncrono oficial de MongoDB -->
+    <dependency>
+        <groupId>org.mongodb</groupId>
+        <artifactId>mongodb-driver-sync</artifactId>
+        <version>5.1.0</version>
+    </dependency>
+</dependencies>
+</script>
+</section>
+
+<section id="mongo-tools" data-tab="mongodb">
+<h2>Herramientas CLI (mongoimport, mongoexport, mongosh)</h2>
+<p class="lead">Comandos de consola para importar ficheros JSON, realizar copias de seguridad e interactuar con el shell.</p>
+
+<script type="text/plain" class="code" data-title="mongoimport — Importar colecciones desde ficheros JSON" data-tags="mongoimport importar json concesionario personas coches ventas consola cli" data-lang="shell">
+# Navegar a la carpeta bin de Database Tools
+cd C:\mongodb-database-tools\bin
+
+# Importar arrays JSON a la base de datos Concesionario (--jsonArray es imprescindible si el JSON empieza con [)
+mongoimport --db Concesionario --collection Personas --file "C:\Users\Admin\Downloads\AD\UD1Tema Mongo\Practica_MongoDB\datos_json\Personas.json" --jsonArray
+mongoimport --db Concesionario --collection Coches   --file "C:\Users\Admin\Downloads\AD\UD1Tema Mongo\Practica_MongoDB\datos_json\Coches.json"   --jsonArray
+mongoimport --db Concesionario --collection Ventas   --file "C:\Users\Admin\Downloads\AD\UD1Tema Mongo\Practica_MongoDB\datos_json\Ventas.json"   --jsonArray
+
+# Importar platos a la base de datos Cocina
+mongoimport --db Cocina --collection platos --file "C:\Users\Admin\Downloads\AD\UD1Tema Mongo\Practica_MongoDB\datos_json\Platos.json" --jsonArray
+</script>
+
+<script type="text/plain" class="code" data-title="mongoexport, mongodump y mongorestore" data-tags="mongoexport mongodump mongorestore backup restaurar exportar" data-lang="shell">
+# Exportar una colección específica a un archivo JSON
+mongoexport --db Concesionario --collection Personas --out "Personas_backup.json" --jsonArray
+
+# Volcado completo (backup) de toda una base de datos con mongodump
+mongodump --host localhost --port 27017 --db Concesionario --out ./backup_mongo
+
+# Restaurar una base de datos volcada previamente
+mongorestore --db Concesionario ./backup_mongo/Concesionario
+</script>
+
+<script type="text/plain" class="code" data-title="mongosh — Comandos rápidos de consola" data-tags="mongosh shell comandos show use find drop createcollection" data-lang="shell">
+# Iniciar consola interactiva
+mongosh
+
+# Comandos esenciales en mongosh
+show dbs                       # Listar todas las bases de datos
+use Concesionario              # Seleccionar o crear base de datos
+show collections               # Listar colecciones de la BD actual
+db.createCollection("clientes") # Crear colección vacía
+db.Personas.find().pretty()    # Ver todos los documentos formateados
+db.Personas.countDocuments()   # Contar documentos
+db.Personas.drop()             # Eliminar colección entera
+</script>
+</section>
+
+<section id="mongo-driver" data-tab="mongodb">
+<h2>MongoDB Driver Sync (Java)</h2>
+<p class="lead">Conexión, constructores de filtros (Filters), proyecciones, ordenación y operaciones CRUD.</p>
+
+<script type="text/plain" class="code" data-title="Conexión básica y silenciado de logs" data-tags="mongo conexion mongoclients getdatabase getcollection logs warning" data-lang="java">
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import org.bson.Document;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoClients;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
+
+public class TestMongo {
+    public static void main(String[] args) {
+        // Silenciar mensajes informativos en consola del driver
+        Logger.getLogger("org.mongodb.driver").setLevel(Level.WARNING);
+
+        // Conexión por defecto a localhost:27017
+        try (MongoClient client = MongoClients.create("mongodb://localhost:27017")) {
+            MongoDatabase db = client.getDatabase("Concesionario");
+            MongoCollection<Document> colPersonas = db.getCollection("Personas");
+
+            System.out.println("Total personas: " + colPersonas.countDocuments());
+        }
+    }
+}
+</script>
+
+<script type="text/plain" class="code" data-title="find(): Documento único, iteración con cursor y toJson()" data-tags="find first iterator cursor tojson mongocursor recorrer" data-lang="java">
+// 1. Obtener el primer documento de la colección
+Document primerDoc = colLibros.find().first();
+if (primerDoc != null) {
+    System.out.println("Documento en JSON: " + primerDoc.toJson());
+    System.out.println("Título: " + primerDoc.getString("titulo"));
+}
+
+// 2. Recorrer múltiples documentos con MongoCursor en try-with-resources
+try (MongoCursor<Document> cursor = colLibros.find().iterator()) {
+    while (cursor.hasNext()) {
+        Document doc = cursor.next();
+        System.out.println("- " + doc.getString("titulo"));
+    }
+}
+</script>
+
+<script type="text/plain" class="code" data-title="Filters: Catálogo completo de operadores de búsqueda" data-tags="filters eq ne gt gte lt lte and or in nin regex exists elemmatch not size filtros" data-lang="java">
+import com.mongodb.client.model.Filters;
+import org.bson.conversions.Bson;
+
+// Igualdad y desigualdad
+Bson f1 = Filters.eq("ciudad", "London");
+Bson f2 = Filters.ne("estado", "inactivo");
+
+// Comparaciones numéricas y rangos
+Bson f3 = Filters.gt("precio", 5000);              // > 5000
+Bson f4 = Filters.gte("año", 2010);               // >= 2010
+Bson f5 = Filters.lt("stock", 20);                // < 20
+Bson f6 = Filters.and(Filters.gte("año", 2010), Filters.lte("año", 2020)); // Entre 2010 y 2020
+
+// Búsqueda lógica OR e IN
+Bson f7 = Filters.or(
+    Filters.eq("autor.nacionalidad", "Americana"),
+    Filters.eq("editorial", "Planeta")
+);
+Bson f8 = Filters.in("categoria", "Ficción", "Historia", "Novela");
+
+// Expresión regular (búsqueda de texto insensible a mayúsculas con "i")
+Bson f9 = Filters.regex("autor.apellidos", "Follet", "i");
+
+// Comprobación de existencia de un campo
+Bson f10 = Filters.exists("comprador", true);
+
+// Tamaño exacto de un array (ej. préstamos con exactamente 2 libros)
+Bson f11 = Filters.size("libros", 2);
+
+// Filtro dentro de un array de objetos embebidos
+Bson f12 = Filters.elemMatch("libros", Filters.eq("isbn", 446854));
+</script>
+
+<script type="text/plain" class="code" data-title="Proyecciones, Ordenaciones y Límites (Projections, Sorts, Limit)" data-tags="projection projections include exclude excludeid sort sorts ascending descending limit skip" data-lang="java">
+import com.mongodb.client.model.Projections;
+import com.mongodb.client.model.Sorts;
+
+// Incluir solo ciertos campos y excluir el _id automático
+Bson proy = Projections.fields(
+    Projections.include("titulo", "editorial", "año"),
+    Projections.excludeId()
+);
+
+// Ordenar por año ascendente (1) y por páginas descendente (-1)
+Bson orden = Sorts.orderBy(Sorts.ascending("año"), Sorts.descending("paginas"));
+
+// Consulta combinada con proyección, orden y límite
+try (MongoCursor<Document> cursor = colLibros.find(Filters.gt("año", 2000))
+        .projection(proy)
+        .sort(orden)
+        .limit(10)
+        .iterator()) {
+    while (cursor.hasNext()) {
+        System.out.println(cursor.next().toJson());
+    }
+}
+</script>
+
+<script type="text/plain" class="code" data-title="Operaciones de Escritura CRUD (Insertar, Actualizar, Borrar)" data-tags="insertone insertmany updateone updatemany deleteone deletemany updates set inc" data-lang="java">
+import com.mongodb.client.model.Updates;
+
+// 1. Insertar un documento
+Document nuevoLibro = new Document("isbn", 999123)
+    .append("titulo", "Aprendiendo JDBC y MongoDB")
+    .append("año", 2026)
+    .append("paginas", 320);
+colLibros.insertOne(nuevoLibro);
+
+// 2. Actualizar un documento (set, inc, push)
+colLibros.updateOne(
+    Filters.eq("isbn", 999123),
+    Updates.combine(
+        Updates.set("editorial", "Antigravity Press"),
+        Updates.inc("paginas", 15) // Incrementa en 15 páginas
+    )
+);
+
+// 3. Borrar documentos
+colLibros.deleteOne(Filters.eq("isbn", 999123));
+// colLibros.deleteMany(Filters.lt("año", 1950));
+</script>
+</section>
+
+<section id="mongo-embebidos" data-tab="mongodb">
+<h2>Subdocumentos Embebidos y Arrays</h2>
+<p class="lead">Navegación segura y extracción de datos anidados en esquemas BSON sin errores de ClassCast.</p>
+
+<script type="text/plain" class="code" data-title="Leer subdocumentos y arrays embebidos (getList, get)" data-tags="document embebido array list casting getlist subdocumento anidado" data-lang="java">
+Document doc = colCoches.find(Filters.eq("model", "Rolls")).first();
+
+if (doc != null) {
+    // 1. Lectura de campos primitivos
+    String modelo = doc.getString("model");
+    Integer anio = doc.getInteger("Year");
+
+    // 2. Lectura de un subdocumento embebido { ... }
+    Document motor = doc.get("motor", Document.class);
+    if (motor != null) {
+        String cilindrada = motor.getString("cilindrada");
+        System.out.println("Cilindrada: " + cilindrada);
+    }
+
+    // 3. Lectura de un array de objetos embebidos [ {...}, {...} ]
+    List<Document> revisiones = doc.getList("revisiones", Document.class);
+    if (revisiones != null) {
+        for (Document rev : revisiones) {
+            String fecha = rev.getString("fecha");
+            System.out.println("Revisión pasada en fecha: " + fecha);
+        }
+    }
+
+    // 4. Lectura de un array de valores primitivos [ "Deportes", "Moda" ]
+    List<String> categorias = doc.getList("categorias", String.class);
+}
+</script>
+</section>
+
+<section id="mongo-aggregates" data-tab="mongodb">
+<h2>Pipelines de Agregación (Aggregates)</h2>
+<p class="lead">Consultas analíticas avanzadas: filtros ($match), agrupación ($group), acumuladores ($sum, $avg) y joins ($lookup).</p>
+
+<script type="text/plain" class="code" data-title="Agregación: Agrupar por persona y sumar gasto total con ordenación" data-tags="aggregates match group sort limit project lookup unwind accumulators sum aggregate" data-lang="java">
+import java.util.Arrays;
+import com.mongodb.client.model.Aggregates;
+import com.mongodb.client.model.Accumulators;
+
+// Pipeline para calcular la persona que más ha gastado en el Concesionario:
+// 1. Agrupar por 'id_persona' y sumar el campo 'precio' de cada venta
+// 2. Ordenar por 'gastoTotal' descendente (-1)
+// 3. Limitar a 1 (o más en caso de empate)
+colVentas.aggregate(Arrays.asList(
+    Aggregates.group("$id_persona", Accumulators.sum("gastoTotal", "$precio")),
+    Aggregates.sort(Sorts.descending("gastoTotal")),
+    Aggregates.limit(5)
+)).forEach(doc -> {
+    int idPersona = doc.getInteger("_id");
+    Object total = doc.get("gastoTotal");
+    System.out.println("ID Persona: " + idPersona + " -> Total gastado: " + total + " €");
+});
+</script>
+
+<script type="text/plain" class="code" data-title="Desanidar arrays ($unwind) y cruce entre colecciones ($lookup)" data-tags="unwind lookup aggregate cruce colecciones join relacion" data-lang="java">
+// Unwind desglosa cada elemento de un array en un documento independiente
+// Lookup realiza un cruce (JOIN) entre colecciones
+colLibros.aggregate(Arrays.asList(
+    // 1. Filtrar solo ciertos libros
+    Aggregates.match(Filters.gt("año", 2000)),
+    // 2. Cruzar con la colección Prestamos (como un LEFT JOIN)
+    Aggregates.lookup("Prestamos", "isbn", "libros.isbn", "prestamosAsociados")
+)).forEach(doc -> {
+    System.out.println(doc.getString("titulo") + " -> " + doc.getList("prestamosAsociados", Document.class).size() + " préstamos");
+});
+</script>
+</section>
+
+<section id="errores-mongodb" data-tab="mongodb">
+<h2>Errores Típicos en MongoDB</h2>
+<p class="lead">Trampas frecuentes en tipos de datos BSON, esquemas dinámicos y colecciones.</p>
+<script type="text/plain" class="code" data-title="Checklist rápido MongoDB" data-tags="errores trampas checklist problemas" data-lang="list">
+- BSON es fuertemente tipado: Si un campo se guardó como String "1", buscar con Filters.eq("num", 1) NO encontrará nada.
+- Errata histórica en el JSON del Concesionario: En la colección Coches, la matrícula puede llamarse "Matrícula", "matricula" o "Mstrícula". Usa Filters.or(...).
+- Intentar Document.parse() sobre un array JSON (que empieza con [) -> Lanza org.bson.json.JsonParseException: JSON must represent an object.
+- Olvidar cerrar el cursor o MongoClient -> Lanza aviso de Resource Leak.
+- doc.getString() en un campo que es Integer -> Lanza ClassCastException: java.lang.Integer cannot be cast to java.lang.String.
+- Olvidar --jsonArray en mongoimport cuando el fichero contiene un array de objetos -> Solo importará el primer elemento o dará error sintáctico.
+</script>
+</section>
+
+<!-- ========================================== -->
+<!-- SECCIONES JSON                            -->
+<!-- ========================================== -->
+<section id="dep-json" data-tab="json">
+<h2>Dependencias Maven</h2>
+<p class="lead">Las tres librerías principales de manejo de JSON usadas en el curso: JSON.simple, Google Gson y Jayway JsonPath.</p>
+
+<script type="text/plain" class="code" data-title="pom.xml — json-simple + gson + json-path" data-tags="maven pom dependency json simple gson jsonpath" data-lang="xml">
+<dependencies>
+    <!-- 1. JSON.simple: Usada en las prácticas oficiales del aula (ejProductos, Practica1) -->
+    <dependency>
+        <groupId>com.googlecode.json-simple</groupId>
+        <artifactId>json-simple</artifactId>
+        <version>1.1.1</version>
+    </dependency>
+
+    <!-- 2. Google Gson: Serialización / Deserialización de POJOs y formateo -->
+    <dependency>
+        <groupId>com.google.code.gson</groupId>
+        <artifactId>gson</artifactId>
+        <version>2.11.0</version>
+    </dependency>
+
+    <!-- 3. Jayway JsonPath: Consultas declarativas y filtros estilo XPath -->
+    <dependency>
+        <groupId>com.jayway.jsonpath</groupId>
+        <artifactId>json-path</artifactId>
+        <version>2.9.0</version>
+    </dependency>
+</dependencies>
+</script>
+</section>
+
+<section id="json-simple" data-tab="json">
+<h2>JSON.simple (org.json.simple)</h2>
+<p class="lead">La librería nativa empleada en los proyectos de aula: parseo con JSONParser, JSONObject y JSONArray.</p>
+
+<div class="note">
+<b>¡CUIDADO CRÍTICO CON LOS TIPOS!</b><br>
+En <code>org.json.simple</code>, los números enteros del JSON se parsean obligatoriamente como <code>java.lang.Long</code>, y los decimales como <code>java.lang.Double</code>. Si haces <code>(Integer) obj.get("stock")</code> se lanzará una <code>ClassCastException</code> en tiempo de ejecución. Debes hacer <code>(Long) obj.get("stock")</code> o <code>((Number) obj.get("stock")).intValue()</code>.
+</div>
+
+<script type="text/plain" class="code" data-title="Lectura completa con JSONParser, JSONObject y JSONArray" data-tags="jsonparser jsonobject jsonarray cast long double recorrer simple" data-lang="java">
+import java.io.FileReader;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+
+public class EjemploJsonSimple {
+    public static void main(String[] args) {
+        JSONParser parser = new JSONParser();
+
+        try (FileReader reader = new FileReader("ficheros/productos.json")) {
+            // Si el fichero empieza con '[' es un JSONArray; si empieza con '{' es un JSONObject
+            JSONArray prodArray = (JSONArray) parser.parse(reader);
+
+            for (Object item : prodArray) {
+                JSONObject prod = (JSONObject) item;
+
+                // 1. Strings
+                String nombre = (String) prod.get("nombre_producto");
+
+                // 2. Números: enteros siempre a Long, decimales a Double
+                Long stock = (Long) prod.get("stock");
+                Double precio = (Double) prod.get("precio");
+
+                // 3. Subobjetos embebidos
+                JSONObject ubicacion = (JSONObject) prod.get("ubicacion");
+                String almacen = ubicacion != null ? (String) ubicacion.get("almacen") : "N/A";
+
+                // 4. Arrays embebidos
+                JSONArray categorias = (JSONArray) prod.get("categorias");
+                if (categorias != null && categorias.contains("Deportes")) {
+                    System.out.println("Deporte: " + nombre + " | Stock: " + stock + " | Almacén: " + almacen);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+</script>
+</section>
+
+<section id="json-gson" data-tab="json">
+<h2>Google Gson (com.google.gson)</h2>
+<p class="lead">Mapeo bidireccional entre JSON y objetos POJO, navegación con JsonObject/JsonArray y Pretty Printing.</p>
+
+<script type="text/plain" class="code" data-title="POJO Persona para mapeo con Gson" data-tags="pojo persona clase atributos getters tostring gson serializedname" data-lang="java">
+import com.google.gson.annotations.SerializedName;
+
+public class Persona {
+    private String nombre;
+    
+    // Si en el JSON se llama 'surname' o 'apellidos', SerializedName permite mapearlo
+    @SerializedName(value = "apellidos", alternate = {"surname"})
+    private String apellidos;
+    
+    private String city;
+    private Integer age;
+
+    public Persona() {}
+
+    public Persona(String nombre, String apellidos, String city, Integer age) {
+        this.nombre = nombre;
+        this.apellidos = apellidos;
+        this.city = city;
+        this.age = age;
+    }
+
+    public String getNombre() { return nombre; }
+    public String getApellidos() { return apellidos; }
+    public String getCity() { return city; }
+    public Integer getAge() { return age; }
+
+    @Override
+    public String toString() {
+        return "Persona{nombre='" + nombre + "', apellidos='" + apellidos + "', city='" + city + "', age=" + age + "}";
+    }
+}
+</script>
+
+<script type="text/plain" class="code" data-title="Gson: JSON ↔ POJO, Listas con TypeToken y Pretty Printing" data-tags="gson tojson fromjson typetoken list gsonbuilder prettyprinting serializar deserializar" data-lang="java">
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
+import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.List;
+
+Gson gson = new Gson();
+
+// 1. JSON String -> Objeto POJO individual
+String jsonPersona = "{\"nombre\":\"Alice\", \"apellidos\":\"Smith\", \"city\":\"London\", \"age\":30}";
+Persona p = gson.fromJson(jsonPersona, Persona.class);
+System.out.println("Persona deserializada: " + p.getNombre() + " de " + p.getCity());
+
+// 2. Objeto POJO -> JSON String
+String jsonGenerado = gson.toJson(p);
+
+// 3. Array JSON -> Lista genérica de POJOs usando TypeToken
+String jsonArrayStr = "[{\"nombre\":\"Alice\"}, {\"nombre\":\"Bob\"}]";
+Type tipoLista = new TypeToken<ArrayList<Persona>>(){}.getType();
+ArrayList<Persona> listaPersonas = gson.fromJson(jsonArrayStr, tipoLista);
+
+// 4. Formateo legible (Pretty Printing)
+Gson gsonPretty = new GsonBuilder().setPrettyPrinting().create();
+System.out.println(gsonPretty.toJson(listaPersonas));
+</script>
+
+<script type="text/plain" class="code" data-title="Navegación en árbol: JsonParser, JsonObject y JsonArray" data-tags="jsonparser jsonobject jsonarray getasstring getasint has arbol gson" data-lang="java">
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonParser;
+
+// Parsear directamente desde un String o Reader
+JsonElement root = JsonParser.parseString(jsonString);
+
+if (root.isJsonArray()) {
+    JsonArray array = root.getAsJsonArray();
+    for (JsonElement el : array) {
+        JsonObject obj = el.getAsJsonObject();
+        
+        // Comprobación segura con has() antes de extraer
+        if (obj.has("nombre_producto")) {
+            String nombre = obj.get("nombre_producto").getAsString();
+            double precio = obj.has("precio") ? obj.get("precio").getAsDouble() : 0.0;
+            System.out.println(nombre + " (" + precio + " €)");
+        }
+    }
+}
+</script>
+</section>
+
+<section id="json-path" data-tab="json">
+<h2>Jayway JsonPath</h2>
+<p class="lead">Consultas declarativas directas sobre cadenas JSON o ficheros sin bucles manuales ni POJOs.</p>
+
+<script type="text/plain" class="code" data-title="Consultas rápidas y filtros con JsonPath" data-tags="jsonpath jayway xpath json consulta filtro sintaxis" data-lang="java">
+import com.jayway.jsonpath.JsonPath;
+import java.io.File;
+import java.util.List;
+import java.util.Map;
+
+File file = new File("ficheros/productos.json");
+
+// 1. Obtener todos los nombres de productos: $[*].nombre_producto
+List<String> nombres = JsonPath.read(file, "$[*].nombre_producto");
+
+// 2. Filtrar productos de tipo 'Ropa': $[?(@.tipo_producto == 'Ropa')]
+List<Map<String, Object>> ropa = JsonPath.read(file, "$[?(@.tipo_producto == 'Ropa')]");
+
+// 3. Filtro compuesto con operadores lógicos: Almacén 1 con precio < 150
+List<String> nombresAlmacen = JsonPath.read(file, 
+    "$[?(@.ubicacion.almacen == 'Almacén 1' && @.precio < 150)].nombre_producto");
+
+// 4. Búsqueda en arrays embebidos: que contenga 'Deportes' en categorias
+List<String> deportes = JsonPath.read(file, "$[?('Deportes' in @.categorias)].nombre_producto");
+</script>
+
+<script type="text/plain" class="code" data-title="Tabla de sintaxis y operadores de JsonPath" data-tags="sintaxis jsonpath resumen operadores filtros wildcard" data-lang="list">
+- $ -> Elemento raíz del JSON (sea objeto {} o array []).
+- * -> Comodín (todos los elementos o todas las propiedades).
+- .. -> Búsqueda profunda / recursiva en cualquier nivel del documento.
+- [?(@.campo == valor)] -> Filtro por condición booleana sobre el nodo actual (@).
+- Operadores soportados en filtros: ==, !=, <, <=, >, >=, &&, ||.
+- Operador de pertenencia: [?('valor' in @.array)] para buscar dentro de listas.
+</script>
+</section>
+
+<section id="json-ficheros" data-tab="json">
+<h2>Lectura y Escritura de Ficheros JSON</h2>
+<p class="lead">Cargar JSON desde disco con codificación segura y persistir nuevos objetos con formato indentado.</p>
+
+<script type="text/plain" class="code" data-title="Añadir un objeto a un array JSON y guardar con Pretty Printing" data-tags="escribir fichero json filewriter pretty guardar append array" data-lang="java">
+import com.google.gson.*;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.Writer;
+
+public class GuardarJson {
+    public static void insertarProducto(JsonObject nuevo) throws Exception {
+        JsonArray productos;
+        
+        // 1. Cargar el array existente
+        try (FileReader reader = new FileReader("ficheros/productos.json")) {
+            productos = JsonParser.parseReader(reader).getAsJsonArray();
+        }
+
+        // 2. Añadir el nuevo objeto
+        productos.add(nuevo);
+
+        // 3. Volcar todo el array formateado a disco
+        try (Writer writer = new FileWriter("ficheros/productos.json")) {
+            new GsonBuilder().setPrettyPrinting().create().toJson(productos, writer);
+        }
+        System.out.println("Fichero productos.json actualizado correctamente.");
+    }
+}
+</script>
+</section>
+
+<section id="errores-json" data-tab="json">
+<h2>Errores Típicos en JSON</h2>
+<p class="lead">Las trampas más frecuentes al procesar ficheros y cadenas JSON.</p>
+<script type="text/plain" class="code" data-title="Checklist rápido JSON" data-tags="errores trampas checklist problemas" data-lang="list">
+- ClassCastException al castear a Integer en JSON.simple: Usa (Long) o ((Number) obj.get("campo")).intValue().
+- NullPointerException al llamar a getAsString() sobre una clave ausente: Comprueba siempre obj.has("campo") o != null.
+- Fichero JSON mal formado: Corchetes sin cerrar, comas sobrantes al final del último elemento.
+- Confundir array ([]) con objeto ({}): Si el JSON empieza por [, debes castear a JSONArray o JsonArray, nunca a JSONObject.
+- En strings de JsonPath: Las comillas simples se usan dentro de los corchetes de filtro [?(@.tipo == 'Ropa')].
+- Fichero con caracteres extraños al inicio (BOM UTF-8) o comentarios generados por IA: Limpia el JSON para que empiece exactamente en [ o {.
+</script>
+</section>
+
+<!-- ========================================== -->
+<!-- SECCIONES EJERCICIOS (APARTADO DEDICADO)  -->
+<!-- ========================================== -->
+<section id="ejercicios-jdbc" data-tab="ejercicios">
+<h2>Ejercicios Resueltos — JDBC (Ciclismo y Fechas)</h2>
+<p class="lead">Soluciones completas paso a paso con código autocontenido, explicaciones prácticas detalladas y advertencias de trampas de examen.</p>
+
+<div class="ex-box">
+  <div class="ex-header">
+    <h3>Ejercicio Repaso r1 — Ciclistas de más de una edad que han ganado alguna etapa</h3>
+    <span class="ex-tag">SELECT + NATURAL JOIN + Parámetro</span>
+  </div>
+  <div class="ex-body">
+    <div class="ex-statement"><b>Enunciado:</b> Muestra el nombre de los ciclistas de más de una edad introducida por el usuario por teclado que hayan ganado al menos una etapa en la vuelta ciclista.</div>
+    <div class="ex-explain">
+      <b>Explicación paso a paso:</b>
+      <ol>
+        <li>Se solicita por teclado la edad con <code>tec.nextInt()</code> y de inmediato se llama a <code>tec.nextLine()</code> para limpiar el salto de línea residual.</li>
+        <li>La consulta calcula la edad actual restando el año de nacimiento al año actual: <code>YEAR(CURDATE()) - YEAR(nacimiento) > ?</code>.</li>
+        <li>Se usa <code>NATURAL JOIN</code> o <code>JOIN etapa ON ciclista.dorsal = etapa.dorsal</code>. Al ganar una etapa, el dorsal del ciclista figura en la columna <code>dorsal</code> de la tabla <code>etapa</code>.</li>
+        <li>Se utiliza <code>DISTINCT</code> para que un ciclista que haya ganado varias etapas no aparezca repetido en la consola.</li>
+      </ol>
+    </div>
+    <div class="ex-warn"><b>¡Cuidado!</b> El índice del parámetro en <code>pstmt.setInt(1, vedad)</code> es 1. Los índices en JDBC nunca empiezan en 0.</div>
+  </div>
+</div>
+<script type="text/plain" class="code" data-title="r1 — Ciclistas de más de X edad que han ganado alguna etapa" data-tags="r1 select preparedstatement executequery ciclistas edad curdate distinct etapa natural join" data-lang="java">
+import java.sql.*;
+import java.util.Scanner;
+
+public class Ejer_r1 {
+    public static void main(String[] args) {
+        Scanner tec = new Scanner(System.in);
+        System.out.print("Introduce la edad mínima: ");
+        int vedad = tec.nextInt();
+        tec.nextLine(); // Limpiar salto de línea del búfer
+
+        String sql = "SELECT DISTINCT c.nombre " +
+                     "FROM ciclista c " +
+                     "JOIN etapa e ON c.dorsal = e.dorsal " +
+                     "WHERE YEAR(CURDATE()) - YEAR(c.nacimiento) > ?";
+
+        try (Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/ciclismo", "root", "mysql");
+             PreparedStatement pstmt = con.prepareStatement(sql)) {
+
+            pstmt.setInt(1, vedad);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                System.out.println("Ciclistas mayores de " + vedad + " años que han ganado etapas:");
+                boolean hayDatos = false;
+                while (rs.next()) {
+                    hayDatos = true;
+                    System.out.println("- " + rs.getString("nombre"));
+                }
+                if (!hayDatos) System.out.println("Ningún ciclista cumple la condición.");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+}
+</script>
+
+<div class="ex-box">
+  <div class="ex-header">
+    <h3>Ejercicio Repaso r2 — Número de ciclistas por equipo</h3>
+    <span class="ex-tag">GROUP BY + COUNT</span>
+  </div>
+  <div class="ex-body">
+    <div class="ex-statement"><b>Enunciado:</b> Consultar cuántos ciclistas tiene cada equipo y mostrar el nombre del equipo junto a su total de corredores.</div>
+    <div class="ex-explain">
+      <b>Explicación paso a paso:</b>
+      <ol>
+        <li>Se agrupa por la columna de equipo: <code>GROUP BY nomeq</code>.</li>
+        <li>Se aplica la función agregada <code>COUNT(*)</code> para contar las filas que pertenecen a cada equipo.</li>
+        <li>Al leer el ResultSet, la columna 1 corresponde al total numérico (<code>rs.getInt(1)</code>) y la columna 2 al nombre del equipo (<code>rs.getString(2)</code>), según el orden en el SELECT.</li>
+      </ol>
+    </div>
+  </div>
+</div>
+<script type="text/plain" class="code" data-title="r2 — Consultar cuántos ciclistas tiene cada equipo" data-tags="r2 select count group by equipo ciclista nomeq" data-lang="java">
+String sql = "SELECT nomeq, COUNT(*) AS total_ciclistas FROM ciclista GROUP BY nomeq ORDER BY total_ciclistas DESC";
+
+try (Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/ciclismo", "root", "mysql");
+     PreparedStatement pstmt = con.prepareStatement(sql);
+     ResultSet rs = pstmt.executeQuery()) {
+
+    while (rs.next()) {
+        String equipo = rs.getString("nomeq");
+        int total = rs.getInt("total_ciclistas");
+        System.out.println(equipo + " -> " + total + " ciclistas");
+    }
+} catch (SQLException e) {
+    e.printStackTrace();
+}
+</script>
+
+<div class="ex-box">
+  <div class="ex-header">
+    <h3>Ejercicio Repaso r3 — Equipos con ciclistas que han ganado más de 2 etapas</h3>
+    <span class="ex-tag">HAVING + ONLY_FULL_GROUP_BY</span>
+  </div>
+  <div class="ex-body">
+    <div class="ex-statement"><b>Enunciado:</b> Consultar el nombre del equipo y el nombre de los ciclistas que han ganado más de 2 etapas.</div>
+    <div class="ex-explain">
+      <b>Explicación paso a paso:</b>
+      <ol>
+        <li>Se cruza <code>ciclista</code> con <code>etapa</code> mediante su clave foránea <code>dorsal</code>.</li>
+        <li>Se agrupa por ciclista: para cumplir con el estándar SQL <code>ONLY_FULL_GROUP_BY</code> de MySQL 8, todas las columnas que figuren en el SELECT deben estar presentes en la cláusula <code>GROUP BY</code>: <code>GROUP BY c.dorsal, c.nombre, c.nomeq</code>.</li>
+        <li>La condición sobre el total de etapas ganadas no puede ir en el WHERE porque es un valor agregado; debe ir en <code>HAVING COUNT(e.netapa) > 2</code>.</li>
+      </ol>
+    </div>
+  </div>
+</div>
+<script type="text/plain" class="code" data-title="r3 — Equipos y ciclistas con más de 2 etapas ganadas (HAVING)" data-tags="r3 having group by count etapas ganadas ciclista equipo only_full_group_by" data-lang="java">
+String sql = "SELECT c.nomeq, c.nombre, c.dorsal, COUNT(e.netapa) AS etapas_ganadas " +
+             "FROM ciclista c " +
+             "JOIN etapa e ON c.dorsal = e.dorsal " +
+             "GROUP BY c.dorsal, c.nombre, c.nomeq " +
+             "HAVING COUNT(e.netapa) > 2";
+
+try (Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/ciclismo", "root", "mysql");
+     PreparedStatement pstmt = con.prepareStatement(sql);
+     ResultSet rs = pstmt.executeQuery()) {
+
+    while (rs.next()) {
+        System.out.println("Dorsal " + rs.getInt("dorsal") + ": " + rs.getString("nombre") +
+                           " (" + rs.getString("nomeq") + ") ha ganado " + rs.getInt("etapas_ganadas") + " etapas.");
+    }
+} catch (SQLException e) {
+    e.printStackTrace();
+}
+</script>
+
+<div class="ex-box">
+  <div class="ex-header">
+    <h3>Ejercicio Repaso r4 — Asignar maillot en una etapa con todas las restricciones</h3>
+    <span class="ex-tag">Validaciones Previas + Integridad</span>
+  </div>
+  <div class="ex-body">
+    <div class="ex-statement"><b>Enunciado:</b> Al asignar un maillot a un ciclista en una etapa, controla que:<br>
+    1. El ciclista, la etapa y el maillot existan en la BD.<br>
+    2. Ese maillot no lo lleve ya otro ciclista en esa misma etapa (si lo lleva, indica quién mostrando su nombre en lugar de un error de clave duplicada).<br>
+    3. El ciclista no lleve ya otro maillot en esa misma etapa.<br>
+    Si se cumplen todas las reglas, registrar la tupla en la tabla <code>llevar</code>.</div>
+    <div class="ex-explain">
+      <b>Explicación paso a paso:</b>
+      <ol>
+        <li>Se realizan 3 consultas SELECT rápidas para verificar que existan ciclista, etapa y maillot. Si cualquiera falla, se informa con un mensaje exacto y se corta.</li>
+        <li>Se consulta en <code>llevar</code> si el maillot ya está asignado en esa etapa haciendo un JOIN con <code>ciclista</code> para recuperar el nombre del portador. Si existe, se muestra: <i>"El maillot ya lo lleva [nombre]"</i>.</li>
+        <li>Se consulta en <code>llevar</code> si este ciclista ya tiene un maillot en esa etapa haciendo un JOIN con <code>maillot</code> para recuperar su código o descripción.</li>
+        <li>Si todas las comprobaciones son satisfactorias, se ejecuta el <code>INSERT INTO llevar (dorsal, netapa, codigo) VALUES (?, ?, ?)</code>.</li>
+      </ol>
+    </div>
+  </div>
+</div>
+<script type="text/plain" class="code" data-title="r4 — Asignar maillot en etapa con 5 controles de negocio" data-tags="r4 maillot llevar asignar ciclista etapa existe duplicado clave duplicada nombre restricciones" data-lang="java">
+import java.sql.*;
+import java.util.Scanner;
+
+public class Ejer_r4_Llevar {
+    public static void main(String[] args) {
+        Scanner tec = new Scanner(System.in);
+        System.out.print("Introduce dorsal del ciclista: ");
+        int dorsal = tec.nextInt();
+        System.out.print("Introduce número de etapa: ");
+        int netapa = tec.nextInt();
+        tec.nextLine();
+        System.out.print("Introduce código del maillot: ");
+        String codigo = tec.nextLine().trim();
+
+        try (Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/ciclismo", "root", "mysql")) {
+
+            // 1. Comprobar que el ciclista existe
+            try (PreparedStatement p = con.prepareStatement("SELECT nombre FROM ciclista WHERE dorsal = ?")) {
+                p.setInt(1, dorsal);
+                try (ResultSet rs = p.executeQuery()) {
+                    if (!rs.next()) { System.out.println("Error: El ciclista con dorsal " + dorsal + " no existe."); return; }
+                }
+            }
+
+            // 2. Comprobar que la etapa existe
+            try (PreparedStatement p = con.prepareStatement("SELECT netapa FROM etapa WHERE netapa = ?")) {
+                p.setInt(1, netapa);
+                try (ResultSet rs = p.executeQuery()) {
+                    if (!rs.next()) { System.out.println("Error: La etapa " + netapa + " no existe."); return; }
+                }
+            }
+
+            // 3. Comprobar que el maillot existe
+            try (PreparedStatement p = con.prepareStatement("SELECT tipo FROM maillot WHERE codigo = ?")) {
+                p.setString(1, codigo);
+                try (ResultSet rs = p.executeQuery()) {
+                    if (!rs.next()) { System.out.println("Error: El maillot con código '" + codigo + "' no existe."); return; }
+                }
+            }
+
+            // 4. Comprobar que ese maillot no lo lleve ya otro ciclista en esa etapa
+            String sqlOtro = "SELECT c.nombre FROM llevar l JOIN ciclista c ON l.dorsal = c.dorsal WHERE l.netapa = ? AND l.codigo = ?";
+            try (PreparedStatement p = con.prepareStatement(sqlOtro)) {
+                p.setInt(1, netapa);
+                p.setString(2, codigo);
+                try (ResultSet rs = p.executeQuery()) {
+                    if (rs.next()) {
+                        System.out.println("Restricción: El maillot " + codigo + " ya lo lleva en la etapa " + netapa + " el ciclista: " + rs.getString("nombre"));
+                        return;
+                    }
+                }
+            }
+
+            // 5. Comprobar que el ciclista no lleve ya otro maillot en esa misma etapa
+            String sqlCiclista = "SELECT m.tipo FROM llevar l JOIN maillot m ON l.codigo = m.codigo WHERE l.netapa = ? AND l.dorsal = ?";
+            try (PreparedStatement p = con.prepareStatement(sqlCiclista)) {
+                p.setInt(1, netapa);
+                p.setInt(2, dorsal);
+                try (ResultSet rs = p.executeQuery()) {
+                    if (rs.next()) {
+                        System.out.println("Restricción: Este ciclista ya lleva otro maillot (" + rs.getString("tipo") + ") en la etapa " + netapa + ".");
+                        return;
+                    }
+                }
+            }
+
+            // 6. Todas las restricciones superadas -> Inserción
+            String sqlIns = "INSERT INTO llevar (dorsal, netapa, codigo) VALUES (?, ?, ?)";
+            try (PreparedStatement p = con.prepareStatement(sqlIns)) {
+                p.setInt(1, dorsal);
+                p.setInt(2, netapa);
+                p.setString(3, codigo);
+                p.executeUpdate();
+                System.out.println("Maillot " + codigo + " asignado correctamente al ciclista " + dorsal + " en la etapa " + netapa + ".");
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+}
+</script>
+
+<div class="ex-box">
+  <div class="ex-header">
+    <h3>Ejercicio Repaso r5 — Transacción atómica: Fusión y absorción de equipos</h3>
+    <span class="ex-tag">Transacción ACID + 4 Tablas</span>
+  </div>
+  <div class="ex-body">
+    <div class="ex-statement"><b>Enunciado:</b> Fusión de equipos: un equipo absorbe a otro. Hay que modificar cuatro tablas de forma que se apliquen todas las operaciones o ninguna:<br>
+    1. Comprobar que ambos equipos existen.<br>
+    2. Los ciclistas del equipo absorbido pasan al nuevo equipo (UPDATE ciclista).<br>
+    3. Sus coches pasan al nuevo equipo (UPDATE o DELETE en coche).<br>
+    4. Su representante pasa al nuevo equipo o se actualiza (UPDATE o DELETE en representante).<br>
+    5. Se elimina el equipo absorbido (DELETE FROM equipo).</div>
+    <div class="ex-explain">
+      <b>Explicación paso a paso:</b>
+      <ol>
+        <li>Se desactiva el guardado automático con <code>con.setAutoCommit(false)</code>.</li>
+        <li>Se ejecutan consecutivamente los 4 cambios. Si los ciclistas cambiasen de equipo pero fallase el borrado final, la BD quedaría inconsistente.</li>
+        <li>Al final del bloque de éxito se llama a <code>con.commit()</code>. En el bloque <code>catch</code> se invoca a <code>con.rollback()</code> para deshacer cualquier modificación intermedia.</li>
+      </ol>
+    </div>
+  </div>
+</div>
+<script type="text/plain" class="code" data-title="r5 — Transacción fusión de equipos completa" data-tags="r5 fusion equipos transaccion absorber ciclista coche representante delete update rollback" data-lang="java">
+import java.sql.*;
+import java.util.Scanner;
+
+public class Ejer_r5_Fusion {
+    public static void main(String[] args) {
+        Scanner tec = new Scanner(System.in);
+        System.out.print("Equipo que desaparece (absorbido): ");
+        String absorbido = tec.nextLine().trim();
+        System.out.print("Equipo que absorbe (destino): ");
+        String destino = tec.nextLine().trim();
+
+        Connection con = null;
+        try {
+            con = DriverManager.getConnection("jdbc:mysql://localhost:3306/ciclismo", "root", "mysql");
+
+            // Validar que ambos equipos existen antes de tocar nada
+            String sqlCheck = "SELECT COUNT(*) FROM equipo WHERE nomeq IN (?, ?)";
+            try (PreparedStatement p = con.prepareStatement(sqlCheck)) {
+                p.setString(1, absorbido);
+                p.setString(2, destino);
+                try (ResultSet rs = p.executeQuery()) {
+                    if (rs.next() && rs.getInt(1) < 2) {
+                        System.out.println("Error: Uno o ambos equipos no existen en la base de datos.");
+                        return;
+                    }
+                }
+            }
+
+            // INICIO TRANSACCIÓN
+            con.setAutoCommit(false);
+
+            // 1. Traspasar ciclistas
+            try (PreparedStatement p = con.prepareStatement("UPDATE ciclista SET nomeq = ? WHERE nomeq = ?")) {
+                p.setString(1, destino);
+                p.setString(2, absorbido);
+                int ciclistas = p.executeUpdate();
+                System.out.println("Ciclistas traspasados: " + ciclistas);
+            }
+
+            // 2. Traspasar o eliminar coches
+            try (PreparedStatement p = con.prepareStatement("DELETE FROM coche WHERE nomequipo = ?")) {
+                p.setString(1, absorbido);
+                p.executeUpdate();
+            }
+
+            // 3. Traspasar o eliminar representante
+            try (PreparedStatement p = con.prepareStatement("DELETE FROM representante WHERE nom_eq = ?")) {
+                p.setString(1, absorbido);
+                p.executeUpdate();
+            }
+
+            // 4. Borrar equipo absorbido
+            try (PreparedStatement p = con.prepareStatement("DELETE FROM equipo WHERE nomeq = ?")) {
+                p.setString(1, absorbido);
+                p.executeUpdate();
+            }
+
+            // CONFIRMAR CAMBIOS
+            con.commit();
+            System.out.println("Fusión de equipos realizada exitosamente.");
+
+        } catch (SQLException e) {
+            System.err.println("Error en la transacción. Aplicando rollback: " + e.getMessage());
+            if (con != null) {
+                try { con.rollback(); } catch (SQLException ex) { ex.printStackTrace(); }
+            }
+        } finally {
+            if (con != null) {
+                try { con.setAutoCommit(true); con.close(); } catch (SQLException ex) {}
+            }
+        }
+    }
+}
+</script>
+
+<div class="ex-box">
+  <div class="ex-header">
+    <h3>Ejercicios Ciclismo 1a, 1b, 1c y 2 — Restricciones de Etapas, Puertos y Premios</h3>
+    <span class="ex-tag">Restricciones de Negocio + Acumuladores</span>
+  </div>
+  <div class="ex-body">
+    <div class="ex-statement"><b>Enunciados:</b><br>
+    <b>1a:</b> Al insertar un puerto, comprobar que la etapa existe y que no tiene más de 2 puertos de 1ª categoría.<br>
+    <b>1b:</b> Al insertar una etapa, comprobar que sus km están entre 100 y 300, y que la suma total de km de toda la vuelta no supere los 1500.<br>
+    <b>1c:</b> Asignar la categoría del puerto de forma automática según la altura: &gt;1500m -&gt; 'E', 1000 a 1500 -&gt; '1', 800 a 1000 -&gt; '2', &lt;800 -&gt; '3'.<br>
+    <b>2:</b> Actualizar la tabla <code>gana</code> con el dorsal del ciclista y el importe total de premios de los maillots que ha llevado.</div>
+  </div>
+</div>
+<script type="text/plain" class="code" data-title="Ciclismo 1a y 1c — Insertar puerto con categoría automática y límites" data-tags="ciclismo puerto insertar categoria automatica altura limite etapa 1a 1c" data-lang="java">
+public static void insertarPuerto(Connection con, String nompuerto, int altura, String pendiente, int netapa) throws SQLException {
+    // 1. Asignar categoría automática según altura (Ejercicio 1c)
+    String categoria;
+    if (altura > 1500) categoria = "E";
+    else if (altura >= 1000) categoria = "1";
+    else if (altura >= 800) categoria = "2";
+    else categoria = "3";
+
+    // 2. Comprobar que la etapa existe (Ejercicio 1a)
+    try (PreparedStatement p = con.prepareStatement("SELECT COUNT(*) FROM etapa WHERE netapa = ?")) {
+        p.setInt(1, netapa);
+        try (ResultSet rs = p.executeQuery()) {
+            if (!rs.next() || rs.getInt(1) == 0) {
+                System.out.println("Error: La etapa " + netapa + " no existe.");
+                return;
+            }
+        }
+    }
+
+    // 3. Si la categoría es 1, comprobar que no haya ya 2 puertos de 1ª en esta etapa
+    if ("1".equals(categoria)) {
+        try (PreparedStatement p = con.prepareStatement("SELECT COUNT(*) FROM puerto WHERE netapa = ? AND categoria = '1'")) {
+            p.setInt(1, netapa);
+            try (ResultSet rs = p.executeQuery()) {
+                if (rs.next() && rs.getInt(1) >= 2) {
+                    System.out.println("Error: La etapa " + netapa + " ya contiene 2 puertos de 1ª categoría.");
+                    return;
+                }
+            }
+        }
+    }
+
+    // 4. Inserción del puerto
+    String sqlIns = "INSERT INTO puerto (nompuerto, altura, pendiente, netapa, categoria) VALUES (?, ?, ?, ?, ?)";
+    try (PreparedStatement p = con.prepareStatement(sqlIns)) {
+        p.setString(1, nompuerto);
+        p.setInt(2, altura);
+        p.setString(3, pendiente);
+        p.setInt(4, netapa);
+        p.setString(5, categoria);
+        p.executeUpdate();
+        System.out.println("Puerto '" + nompuerto + "' insertado con categoría asignada: " + categoria);
+    }
+}
+</script>
+
+<script type="text/plain" class="code" data-title="Ciclismo 1b — Insertar etapa con control de km individuales y acumulados" data-tags="ciclismo etapa insertar km rango acumulado 1500 vuelta 1b" data-lang="java">
+public static void insertarEtapa(Connection con, int netapa, int km, String salida, String llegada, Integer dorsal) throws SQLException {
+    // Restricción 1: km entre 100 y 300
+    if (km < 100 || km > 300) {
+        System.out.println("Error: Los km de la etapa deben estar comprendidos entre 100 y 300.");
+        return;
+    }
+
+    // Restricción 2: suma total de toda la vuelta <= 1500
+    try (PreparedStatement p = con.prepareStatement("SELECT COALESCE(SUM(km), 0) FROM etapa");
+         ResultSet rs = p.executeQuery()) {
+        if (rs.next()) {
+            int sumaActual = rs.getInt(1);
+            if (sumaActual + km > 1500) {
+                System.out.println("Error: Con esta etapa se superaría el tope de 1500 km (actual: " + sumaActual + " km).");
+                return;
+            }
+        }
+    }
+
+    // Inserción de la nueva etapa
+    String sql = "INSERT INTO etapa (netapa, km, salida, llegada, dorsal) VALUES (?, ?, ?, ?, ?)";
+    try (PreparedStatement p = con.prepareStatement(sql)) {
+        p.setInt(1, netapa);
+        p.setInt(2, km);
+        p.setString(3, salida);
+        p.setString(4, llegada);
+        if (dorsal != null) p.setInt(5, dorsal); else p.setNull(5, Types.INTEGER);
+        p.executeUpdate();
+        System.out.println("Etapa " + netapa + " registrada correctamente.");
+    }
+}
+</script>
+
+<script type="text/plain" class="code" data-title="Ciclismo 2 — Actualizar tabla gana con total de premios acumulados" data-tags="ciclismo gana maillot llevar premios suma acumulada replace into 2" data-lang="java">
+// Suma para cada ciclista los premios de los maillots que ha llevado en todas las etapas
+String sql = "INSERT INTO gana (dorsal, premio) " +
+             "SELECT l.dorsal, SUM(m.premio) " +
+             "FROM llevar l " +
+             "JOIN maillot m ON l.codigo = m.codigo " +
+             "GROUP BY l.dorsal " +
+             "ON DUPLICATE KEY UPDATE premio = VALUES(premio)";
+
+try (Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/ciclismo", "root", "mysql");
+     PreparedStatement pstmt = con.prepareStatement(sql)) {
+    int filas = pstmt.executeUpdate();
+    System.out.println("Tabla gana actualizada para " + filas + " ciclistas con éxito.");
+}
+</script>
+
+<div class="ex-box">
+  <div class="ex-header">
+    <h3>Ejemplos de Consulta y Actualización (Ejemplos.jdbc.pdf y Representante)</h3>
+    <span class="ex-tag">Consultas con Scanner y UPDATE</span>
+  </div>
+  <div class="ex-body">
+    <div class="ex-statement"><b>Enunciados:</b><br>
+    <b>Ex 1:</b> Insertar nuevo maillot (RE, regularidad, azul, 20000) pedido por Scanner con control previo.<br>
+    <b>Ex 2:</b> Obtener el número de etapa y el nombre del ciclista a partir de un dorsal dado por el usuario.<br>
+    <b>Ex 3:</b> Obtener la ciudad de salida de las etapas ganadas por ciclistas del equipo dado por el usuario.<br>
+    <b>Representante:</b> Modificar el equipo de un representante pidiendo ID y nuevo equipo.</div>
+  </div>
+</div>
+<script type="text/plain" class="code" data-title="Ex 1, 2, 3 y Actualización de Representante" data-tags="ejemplos dorsal etapa equipo representante update scanner consultas" data-lang="java">
+// Consulta: Etapas ganadas por un dorsal introducido por el usuario
+public static void etapasPorDorsal(Connection con, int dorsal) throws SQLException {
+    String sql = "SELECT e.netapa, c.nombre " +
+                 "FROM etapa e " +
+                 "JOIN ciclista c ON e.dorsal = c.dorsal " +
+                 "WHERE e.dorsal = ?";
+    try (PreparedStatement p = con.prepareStatement(sql)) {
+        p.setInt(1, dorsal);
+        try (ResultSet rs = p.executeQuery()) {
+            while (rs.next()) {
+                System.out.println("Etapa " + rs.getInt("netapa") + " ganada por " + rs.getString("nombre"));
+            }
+        }
+    }
+}
+
+// Consulta: Ciudades de salida de etapas ganadas por ciclistas de un equipo
+public static void salidasPorEquipo(Connection con, String equipo) throws SQLException {
+    String sql = "SELECT DISTINCT e.salida " +
+                 "FROM etapa e " +
+                 "JOIN ciclista c ON e.dorsal = c.dorsal " +
+                 "WHERE c.nomeq = ?";
+    try (PreparedStatement p = con.prepareStatement(sql)) {
+        p.setString(1, equipo);
+        try (ResultSet rs = p.executeQuery()) {
+            System.out.println("Salidas de etapas ganadas por ciclistas del equipo " + equipo + ":");
+            while (rs.next()) {
+                System.out.println("- " + rs.getString("salida"));
+            }
+        }
+    }
+}
+
+// Modificar equipo de un representante pidiendo ID y nuevo equipo
+public static void actualizarRepresentante(Connection con, int id, String nuevoEquipo) throws SQLException {
+    // 1. Validar que el nuevo equipo existe
+    try (PreparedStatement p = con.prepareStatement("SELECT COUNT(*) FROM equipo WHERE nomeq = ?")) {
+        p.setString(1, nuevoEquipo);
+        try (ResultSet rs = p.executeQuery()) {
+            if (!rs.next() || rs.getInt(1) == 0) {
+                System.out.println("Error: El equipo '" + nuevoEquipo + "' no existe.");
+                return;
+            }
+        }
+    }
+    // 2. Actualizar el representante
+    try (PreparedStatement p = con.prepareStatement("UPDATE representante SET nom_eq = ? WHERE id = ?")) {
+        p.setString(1, nuevoEquipo);
+        p.setInt(2, id);
+        int filas = p.executeUpdate();
+        if (filas > 0) System.out.println("Representante " + id + " asignado al equipo " + nuevoEquipo);
+        else System.out.println("No se encontró ningún representante con ID " + id);
+    }
+}
+</script>
+
+<div class="ex-box">
+  <div class="ex-header">
+    <h3>Práctica 3 — Manejo de Fechas en JDBC (Arquitectura DAO Salida)</h3>
+    <span class="ex-tag">DAO + java.util.Date + java.sql.Timestamp + LocalDateTime</span>
+  </div>
+  <div class="ex-body">
+    <div class="ex-statement"><b>Enunciado:</b><br>
+    1) Implementar la clase DAO para la entidad <code>Salida</code> (artículo, usuario, fechaSalida) con los métodos <code>grabar()</code>, <code>buscarPorId()</code> y <code>buscarTodos()</code>.<br>
+    2) Realizar un método donde el usuario introduzca dos fechas por teclado y se obtenga el listado de los artículos y usuarios con salidas registradas entre esas dos fechas.</div>
+  </div>
+</div>
+<script type="text/plain" class="code" data-title="Práctica 3 — DAO Salida completo con LocalDateTime y BETWEEN" data-tags="dao salida fechas localdatetime timestamp between practica 3 pojo buscar grabar" data-lang="java">
+import java.sql.*;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Scanner;
+
+// Modelo POJO Salida
+class Salida {
+    private Integer idSalida;
+    private Integer usuario;
+    private Integer articulo;
+    private LocalDateTime fechaSalida;
+
+    public Salida() {}
+    public Salida(Integer idSalida, Integer usuario, Integer articulo, LocalDateTime fechaSalida) {
+        this.idSalida = idSalida;
+        this.usuario = usuario;
+        this.articulo = articulo;
+        this.fechaSalida = fechaSalida;
+    }
+
+    public Integer getIdSalida() { return idSalida; }
+    public Integer getUsuario() { return usuario; }
+    public Integer getArticulo() { return articulo; }
+    public LocalDateTime getFechaSalida() { return fechaSalida; }
+    public void setIdSalida(Integer idSalida) { this.idSalida = idSalida; }
+    public void setUsuario(Integer usuario) { this.usuario = usuario; }
+    public void setArticulo(Integer articulo) { this.articulo = articulo; }
+    public void setFechaSalida(LocalDateTime fechaSalida) { this.fechaSalida = fechaSalida; }
+
+    @Override
+    public String toString() {
+        return "Salida [ID=" + idSalida + ", Usuario=" + usuario + ", Articulo=" + articulo + ", Fecha=" + fechaSalida + "]";
+    }
+}
+
+// Capa DAO
+class SalidaDAO {
+    private Connection con;
+
+    public SalidaDAO(Connection con) { this.con = con; }
+
+    // 1. Grabar nueva salida
+    public void grabar(Salida s) throws SQLException {
+        String sql = "INSERT INTO salida (usuario, articulo, fechaSalida) VALUES (?, ?, ?)";
+        try (PreparedStatement pstmt = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            pstmt.setInt(1, s.getUsuario());
+            pstmt.setInt(2, s.getArticulo());
+            pstmt.setTimestamp(3, Timestamp.valueOf(s.getFechaSalida()));
+            pstmt.executeUpdate();
+
+            try (ResultSet rs = pstmt.getGeneratedKeys()) {
+                if (rs.next()) s.setIdSalida(rs.getInt(1));
+            }
+        }
+    }
+
+    // 2. Buscar por ID
+    public Salida buscarPorId(int id) throws SQLException {
+        String sql = "SELECT idSalida, usuario, articulo, fechaSalida FROM salida WHERE idSalida = ?";
+        try (PreparedStatement pstmt = con.prepareStatement(sql)) {
+            pstmt.setInt(1, id);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return new Salida(
+                        rs.getInt("idSalida"),
+                        rs.getInt("usuario"),
+                        rs.getInt("articulo"),
+                        rs.getTimestamp("fechaSalida").toLocalDateTime()
+                    );
+                }
+            }
+        }
+        return null;
+    }
+
+    // 3. Buscar salidas registradas entre dos fechas introducidas por el usuario
+    public List<Salida> buscarEntreFechas(LocalDateTime desde, LocalDateTime hasta) throws SQLException {
+        List<Salida> lista = new ArrayList<>();
+        String sql = "SELECT idSalida, usuario, articulo, fechaSalida FROM salida WHERE fechaSalida BETWEEN ? AND ? ORDER BY fechaSalida";
+        try (PreparedStatement pstmt = con.prepareStatement(sql)) {
+            pstmt.setTimestamp(1, Timestamp.valueOf(desde));
+            pstmt.setTimestamp(2, Timestamp.valueOf(hasta));
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    lista.add(new Salida(
+                        rs.getInt("idSalida"),
+                        rs.getInt("usuario"),
+                        rs.getInt("articulo"),
+                        rs.getTimestamp("fechaSalida").toLocalDateTime()
+                    ));
+                }
+            }
+        }
+        return lista;
+    }
+}
+</script>
+</section>
+
+<section id="ejercicios-mongodb" data-tab="ejercicios">
+<h2>Ejercicios Resueltos — MongoDB (Concesionario y Biblioteca)</h2>
+<p class="lead">Soluciones completas y detalladas de las prácticas de Concesionario, los 22 ejercicios de Biblioteca y las Prácticas de Ampliación.</p>
+
+<div class="ex-box">
+  <div class="ex-header">
+    <h3>Concesionario Ejercicio 1 — Propietario y año del coche por matrícula</h3>
+    <span class="ex-tag">Cruce de Colecciones + Errata de Claves</span>
+  </div>
+  <div class="ex-body">
+    <div class="ex-statement"><b>Enunciado:</b> El usuario introduce una matrícula por teclado. El programa debe mostrar el Nombre y Apellidos del propietario de dicho coche y el año (Year) del coche.</div>
+    <div class="ex-explain">
+      <b>Explicación paso a paso:</b>
+      <ol>
+        <li><b>Trampa del dataset oficial:</b> En el fichero <code>Coches.json</code>, el campo de la matrícula a veces aparece con tilde (<code>"Matrícula"</code>), a veces sin tilde (<code>"matricula"</code>) e incluso con errata tipográfica (<code>"Mstrícula"</code>). Se utiliza un <code>Filters.or()</code> para asegurar que encuentre el coche independientemente de la errata.</li>
+        <li>Una vez recuperado el coche, se obtiene su identificador interno <code>id_car</code> y su año (<code>docCoche.get("Year")</code>).</li>
+        <li>Para encontrar al propietario, se busca primero en la colección <code>Ventas</code> por <code>id_car</code>. Si se encuentra la venta, se toma el <code>id_persona</code> y se consulta la colección <code>Personas</code>.</li>
+        <li>Si no está en <code>Ventas</code>, se comprueba si la persona tiene el ID del coche directamente en su array <code>coches</code>: <code>Filters.eq("coches", idCar)</code>.</li>
+      </ol>
+    </div>
+  </div>
+</div>
+<script type="text/plain" class="code" data-title="Concesionario 1 — Matrícula -> Propietario y año del coche" data-tags="concesionario matricula propietario coche persona ventas cruce ejercicio 1" data-lang="java">
+import java.util.Scanner;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import org.bson.Document;
+import org.bson.conversions.Bson;
+import com.mongodb.client.*;
+import com.mongodb.client.model.Filters;
+
+public class Concesionario_Ej1 {
+    public static void main(String[] args) {
+        Logger.getLogger("org.mongodb.driver").setLevel(Level.WARNING);
+
+        Scanner sc = new Scanner(System.in);
+        System.out.print("Introduce la matrícula del coche: ");
+        String matricula = sc.nextLine().trim();
+
+        try (MongoClient mongo = MongoClients.create("mongodb://localhost:27017")) {
+            MongoDatabase db = mongo.getDatabase("Concesionario");
+            MongoCollection<Document> colCoches = db.getCollection("Coches");
+            MongoCollection<Document> colPersonas = db.getCollection("Personas");
+            MongoCollection<Document> colVentas = db.getCollection("Ventas");
+
+            // Filtro cubriendo las erratas del dataset original
+            Bson filtroMat = Filters.or(
+                Filters.eq("Matrícula", matricula),
+                Filters.eq("matricula", matricula),
+                Filters.eq("Mstrícula", matricula)
+            );
+
+            Document coche = colCoches.find(filtroMat).first();
+            if (coche == null) {
+                System.out.println("No se encontró ningún coche con la matrícula: " + matricula);
+                return;
+            }
+
+            Object anio = coche.get("Year");
+            Integer idCar = coche.getInteger("id_car");
+            Document persona = null;
+
+            // 1. Buscar en Ventas
+            if (idCar != null) {
+                Document venta = colVentas.find(Filters.eq("id_car", idCar)).first();
+                if (venta != null && venta.get("id_persona") != null) {
+                    persona = colPersonas.find(Filters.eq("id_persona", venta.getInteger("id_persona"))).first();
+                }
+            }
+
+            // 2. Si no estaba en Ventas, buscar en el array coches de Personas
+            if (persona == null && idCar != null) {
+                persona = colPersonas.find(Filters.eq("coches", idCar)).first();
+            }
+
+            System.out.println("Año del coche: " + anio);
+            if (persona != null) {
+                String nom = persona.getString("nombre");
+                String ape = persona.getString("apellidos") != null ? persona.getString("apellidos") : persona.getString("surname");
+                System.out.println("Propietario: " + nom + " " + ape);
+            } else {
+                System.out.println("Este coche no tiene propietario asignado en el sistema.");
+            }
+        }
+    }
+}
+</script>
+
+<div class="ex-box">
+  <div class="ex-header">
+    <h3>Concesionario Ejercicio 2 — Ventas de María López Martínez ordenadas por fecha</h3>
+    <span class="ex-tag">Búsqueda + Proyección + Sort</span>
+  </div>
+  <div class="ex-body">
+    <div class="ex-statement"><b>Enunciado:</b> Busca una persona cuyo nombre sea «María» y apellidos «López Martínez». Si existe en la colección y tiene ventas registradas, muestra una proyección con la matrícula de sus coches y la fecha de Venta, ordenando los resultados por <code>fechaVenta</code>.</div>
+  </div>
+</div>
+<script type="text/plain" class="code" data-title="Concesionario 2 — Ventas de María López Martínez ordenadas" data-tags="concesionario maria lopez martinez ventas fechaventa sort proyeccion ejercicio 2" data-lang="java">
+import com.mongodb.client.*;
+import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.Sorts;
+import org.bson.Document;
+
+public class Concesionario_Ej2 {
+    public static void main(String[] args) {
+        try (MongoClient mongo = MongoClients.create("mongodb://localhost:27017")) {
+            MongoDatabase db = mongo.getDatabase("Concesionario");
+            MongoCollection<Document> colPersonas = db.getCollection("Personas");
+            MongoCollection<Document> colVentas = db.getCollection("Ventas");
+            MongoCollection<Document> colCoches = db.getCollection("Coches");
+
+            // 1. Buscar la persona
+            Document persona = colPersonas.find(Filters.and(
+                Filters.eq("nombre", "María"),
+                Filters.or(Filters.eq("apellidos", "López Martínez"), Filters.eq("surname", "López Martínez"))
+            )).first();
+
+            if (persona == null) {
+                System.out.println("No se encontró a María López Martínez.");
+                return;
+            }
+
+            int idPersona = persona.getInteger("id_persona");
+            System.out.println("Ventas de " + persona.getString("nombre") + " (ID " + idPersona + "):");
+
+            // 2. Buscar sus ventas ordenadas por fechaVenta ascendente
+            try (MongoCursor<Document> cur = colVentas.find(Filters.eq("id_persona", idPersona))
+                    .sort(Sorts.ascending("fechaVenta"))
+                    .iterator()) {
+
+                while (cur.hasNext()) {
+                    Document v = cur.next();
+                    int idCar = v.getInteger("id_car");
+                    Object fechaVenta = v.get("fechaVenta");
+
+                    // Recuperar matrícula del coche
+                    Document c = colCoches.find(Filters.eq("id_car", idCar)).first();
+                    String mat = (c != null) ? (c.getString("Matrícula") != null ? c.getString("Matrícula") : c.getString("matricula")) : "Desconocida";
+
+                    System.out.println("- Matrícula: " + mat + " | Fecha Venta: " + fechaVenta);
+                }
+            }
+        }
+    }
+}
+</script>
+
+<div class="ex-box">
+  <div class="ex-header">
+    <h3>Concesionario Ejercicio 3 — Coches vendidos por más de un precio (JSON export)</h3>
+    <span class="ex-tag">Filters.gt + toJson()</span>
+  </div>
+  <div class="ex-body">
+    <div class="ex-statement"><b>Enunciado:</b> Solicita al usuario un precio por teclado y muestra toda la información en formato JSON de los coches que se vendieron por un importe superior a dicho valor.</div>
+  </div>
+</div>
+<script type="text/plain" class="code" data-title="Concesionario 3 — Coches vendidos por más de un precio en JSON" data-tags="concesionario precio superior gt ventas tojson coches vendidos ejercicio 3" data-lang="java">
+import java.util.Scanner;
+import com.mongodb.client.*;
+import com.mongodb.client.model.Filters;
+import org.bson.Document;
+
+public class Concesionario_Ej3 {
+    public static void main(String[] args) {
+        Scanner tec = new Scanner(System.in);
+        System.out.print("Introduce precio mínimo de venta: ");
+        double minPrecio = tec.nextDouble();
+
+        try (MongoClient mongo = MongoClients.create("mongodb://localhost:27017")) {
+            MongoDatabase db = mongo.getDatabase("Concesionario");
+            MongoCollection<Document> colVentas = db.getCollection("Ventas");
+            MongoCollection<Document> colCoches = db.getCollection("Coches");
+
+            // Buscar ventas con precio > minPrecio
+            try (MongoCursor<Document> cur = colVentas.find(Filters.gt("precio", minPrecio)).iterator()) {
+                while (cur.hasNext()) {
+                    Document venta = cur.next();
+                    int idCar = venta.getInteger("id_car");
+
+                    Document coche = colCoches.find(Filters.eq("id_car", idCar)).first();
+                    if (coche != null) {
+                        System.out.println("Venta (" + venta.get("precio") + " €): " + coche.toJson());
+                    }
+                }
+            }
+        }
+    }
+}
+</script>
+
+<div class="ex-box">
+  <div class="ex-header">
+    <h3>Concesionario Ejercicio 4 — Coches «Rolls»: Revisiones pasadas y Comprador</h3>
+    <span class="ex-tag">Arrays Embebidos + Búsqueda Relacional</span>
+  </div>
+  <div class="ex-body">
+    <div class="ex-statement"><b>Enunciado:</b> Muestra para los coches que son del modelo «Rolls» la fecha de todas las revisiones que han pasado (array de subdocumentos) y, si ha sido vendido, el nombre de su comprador.</div>
+  </div>
+</div>
+<script type="text/plain" class="code" data-title="Concesionario 4 — Coches Rolls: revisiones y comprador" data-tags="concesionario rolls revisiones comprador fecha array subdocumentos ejercicio 4" data-lang="java">
+import java.util.List;
+import com.mongodb.client.*;
+import com.mongodb.client.model.Filters;
+import org.bson.Document;
+
+public class Concesionario_Ej4 {
+    public static void main(String[] args) {
+        try (MongoClient mongo = MongoClients.create("mongodb://localhost:27017")) {
+            MongoDatabase db = mongo.getDatabase("Concesionario");
+            MongoCollection<Document> colCoches = db.getCollection("Coches");
+            MongoCollection<Document> colVentas = db.getCollection("Ventas");
+            MongoCollection<Document> colPersonas = db.getCollection("Personas");
+
+            try (MongoCursor<Document> cur = colCoches.find(Filters.eq("model", "Rolls")).iterator()) {
+                while (cur.hasNext()) {
+                    Document c = cur.next();
+                    int idCar = c.getInteger("id_car");
+                    System.out.println("==========================================");
+                    System.out.println("Rolls ID " + idCar + " (Año: " + c.get("Year") + ")");
+
+                    // Recorrer array de revisiones embebidas
+                    List<Document> revisiones = c.getList("revisiones", Document.class);
+                    if (revisiones != null && !revisiones.isEmpty()) {
+                        System.out.println("Revisiones pasadas:");
+                        for (Document rev : revisiones) {
+                            System.out.println("  * Fecha: " + rev.get("fecha"));
+                        }
+                    } else {
+                        System.out.println("Sin revisiones registradas.");
+                    }
+
+                    // Comprobar si se ha vendido
+                    Document v = colVentas.find(Filters.eq("id_car", idCar)).first();
+                    if (v != null && v.get("id_persona") != null) {
+                        Document p = colPersonas.find(Filters.eq("id_persona", v.getInteger("id_persona"))).first();
+                        String comprador = (p != null) ? p.getString("nombre") + " " + p.getString("apellidos") : "ID " + v.get("id_persona");
+                        System.out.println("Comprador: " + comprador + " por " + v.get("precio") + " €");
+                    } else {
+                        System.out.println("Estado: No vendido.");
+                    }
+                }
+            }
+        }
+    }
+}
+</script>
+
+<div class="ex-box">
+  <div class="ex-header">
+    <h3>Concesionario Ejercicio 5 — Persona que más ha gastado (Aggregate con Empates)</h3>
+    <span class="ex-tag">Aggregate Pipeline + Accumulators.sum</span>
+  </div>
+  <div class="ex-body">
+    <div class="ex-statement"><b>Enunciado:</b> Muestra la persona que más dinero se ha gastado en el concesionario. Debe mostrar una proyección con el nombre y apellidos de esa persona (o personas si dos o más se han gastado exactamente lo mismo).</div>
+    <div class="ex-explain">
+      <b>Explicación paso a paso:</b>
+      <ol>
+        <li>Se agrupa la colección <code>Ventas</code> por <code>id_persona</code> sumando el campo <code>precio</code> con <code>Accumulators.sum("totalGastado", "$precio")</code>.</li>
+        <li>Se ordena de mayor a menor gasto: <code>Sorts.descending("totalGastado")</code>.</li>
+        <li>Para gestionar empates de forma rigurosa, se obtiene el primer resultado para conocer el importe máximo gastado. Luego se recorren todos los registros que igualen ese importe máximo.</li>
+        <li>Para cada ganador, se busca su ficha en la colección <code>Personas</code> para proyectar su nombre y apellidos.</li>
+      </ol>
+    </div>
+  </div>
+</div>
+<script type="text/plain" class="code" data-title="Concesionario 5 — Persona que más ha gastado (con empates)" data-tags="concesionario aggregate gasto maximo acumuladores group sum empate ejercicio 5" data-lang="java">
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import com.mongodb.client.*;
+import com.mongodb.client.model.Accumulators;
+import com.mongodb.client.model.Aggregates;
+import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.Sorts;
+import org.bson.Document;
+
+public class Concesionario_Ej5 {
+    public static void main(String[] args) {
+        try (MongoClient mongo = MongoClients.create("mongodb://localhost:27017")) {
+            MongoDatabase db = mongo.getDatabase("Concesionario");
+            MongoCollection<Document> colVentas = db.getCollection("Ventas");
+            MongoCollection<Document> colPersonas = db.getCollection("Personas");
+
+            // 1. Agregación sobre Ventas
+            List<Document> ranking = new ArrayList<>();
+            colVentas.aggregate(Arrays.asList(
+                Aggregates.group("$id_persona", Accumulators.sum("totalGastado", "$precio")),
+                Aggregates.sort(Sorts.descending("totalGastado"))
+            )).into(ranking);
+
+            if (ranking.isEmpty()) {
+                System.out.println("No hay ventas registradas.");
+                return;
+            }
+
+            // Gasto máximo registrado
+            double maxGasto = ((Number) ranking.get(0).get("totalGastado")).doubleValue();
+            System.out.println("=== CLIENTE(S) CON MAYOR GASTO (" + maxGasto + " €) ===");
+
+            // 2. Mostrar todas las personas que empaten en el primer puesto
+            for (Document item : ranking) {
+                double gasto = ((Number) item.get("totalGastado")).doubleValue();
+                if (Double.compare(gasto, maxGasto) == 0) {
+                    int idPersona = item.getInteger("_id");
+                    Document p = colPersonas.find(Filters.eq("id_persona", idPersona)).first();
+
+                    String nombreCompleto = (p != null) ? 
+                        p.getString("nombre") + " " + (p.getString("apellidos") != null ? p.getString("apellidos") : p.getString("surname")) :
+                        "ID Persona " + idPersona;
+
+                    System.out.println("- " + nombreCompleto + " -> " + gasto + " €");
+                } else {
+                    break; // Al estar ordenado descendentemente, terminamos
+                }
+            }
+        }
+    }
+}
+</script>
+
+<div class="ex-box">
+  <div class="ex-header">
+    <h3>Práctica Biblioteca — Los 22 Ejercicios de Consulta y Filtros</h3>
+    <span class="ex-tag">Biblioteca_insert_update.java Completo</span>
+  </div>
+  <div class="ex-body">
+    <div class="ex-statement"><b>Enunciado:</b> Resolver los 22 ejercicios prácticos de la base de datos <code>Biblioteca</code> (colecciones Libros, Prestamos, Socios) abarcando filtros simples, combinados (AND, OR), expresiones regulares, navegación en arrays con elemMatch, proyecciones y ordenaciones.</div>
+  </div>
+</div>
+<script type="text/plain" class="code" data-title="Biblioteca — Ejercicios 1 al 9: Primer libro, cursor, socios, Quijote, elemMatch" data-tags="biblioteca libros socios prestamos cursor quijote elemmatch regex follet ejercicios 1 a 9" data-lang="java">
+import com.mongodb.client.*;
+import com.mongodb.client.model.Filters;
+import org.bson.Document;
+
+public class Biblioteca_1_a_9 {
+    public static void main(String[] args) {
+        try (MongoClient mongo = MongoClients.create("mongodb://localhost:27017")) {
+            MongoDatabase db = mongo.getDatabase("Biblioteca");
+            MongoCollection<Document> colLibros = db.getCollection("Libros");
+            MongoCollection<Document> colPrestamos = db.getCollection("Prestamos");
+            MongoCollection<Document> colSocios = db.getCollection("Socios");
+
+            // Ejercicio 1: Primer libro y su ISBN
+            Document primer = colLibros.find().first();
+            System.out.println("E1 - Primer libro ISBN: " + (primer != null ? primer.get("isbn") : "vacío"));
+
+            // Ejercicio 2: Título de todos los libros con cursor
+            System.out.println("E2 - Títulos de todos los libros:");
+            try (MongoCursor<Document> c = colLibros.find().iterator()) {
+                while (c.hasNext()) System.out.println("  * " + c.next().getString("titulo"));
+            }
+
+            // Ejercicio 3 y 4: Lista y nombres de los socios usando get()
+            System.out.println("E3/E4 - Socios:");
+            colSocios.find().forEach(s -> System.out.println("  * " + s.get("nombre") + " " + s.get("apellidos")));
+
+            // Ejercicio 5: Buscar libro 'El Quijote'
+            Document quijote = colLibros.find(Filters.eq("titulo", "El Quijote")).first();
+            System.out.println("E5 - El Quijote: " + (quijote != null ? quijote.toJson() : "No encontrado"));
+
+            // Ejercicio 6: Buscar préstamo con exactamente 2 libros (Filters.size)
+            System.out.println("E6 - Préstamos con 2 libros:");
+            colPrestamos.find(Filters.size("libros", 2)).forEach(p -> System.out.println("  * Préstamo ID: " + p.get("id_prestamo")));
+
+            // Ejercicio 7: Libros del autor con apellido Follet (Filters.regex case-insensitive)
+            System.out.println("E7 - Libros autor Follet:");
+            colLibros.find(Filters.regex("autor.apellidos", "Follet", "i"))
+                .forEach(l -> System.out.println("  * " + l.getString("titulo")));
+
+            // Ejercicio 8: En préstamos, buscar el documento que contenga el libro con ISBN 446854
+            System.out.println("E8 - Préstamo con ISBN 446854:");
+            Document pIsbn = colPrestamos.find(Filters.elemMatch("libros", Filters.eq("isbn", 446854))).first();
+            if (pIsbn != null) System.out.println("  * Encontrado préstamo ID: " + pIsbn.get("id_prestamo"));
+
+            // Ejercicio 9: Nombre de los socios que han tenido prestado el libro 456779
+            System.out.println("E9 - Socios que tuvieron prestado 456779:");
+            colPrestamos.find(Filters.elemMatch("libros", Filters.eq("isbn", 456779))).forEach(p -> {
+                // En préstamos num_socio puede venir como String o Integer
+                Object numSocio = p.get("num_socio");
+                Document socio = colSocios.find(Filters.or(Filters.eq("num_socio", numSocio), Filters.eq("num_socio", String.valueOf(numSocio)))).first();
+                if (socio != null) System.out.println("  * " + socio.getString("nombre") + " " + socio.getString("apellidos"));
+            });
+        }
+    }
+}
+</script>
+
+<script type="text/plain" class="code" data-title="Biblioteca — Ejercicios 10 al 16: Filtros compuestos (and, or), rangos y editoriales" data-tags="biblioteca filtros and or gt gte lte editorial debolsillo rango ejercicios 10 a 16" data-lang="java">
+import com.mongodb.client.*;
+import com.mongodb.client.model.Filters;
+import org.bson.Document;
+
+public class Biblioteca_10_a_16 {
+    public static void main(String[] args) {
+        try (MongoClient mongo = MongoClients.create("mongodb://localhost:27017")) {
+            MongoDatabase db = mongo.getDatabase("Biblioteca");
+            MongoCollection<Document> colLibros = db.getCollection("Libros");
+            MongoCollection<Document> colSocios = db.getCollection("Socios");
+            MongoCollection<Document> colPrestamos = db.getCollection("Prestamos");
+
+            // Ejercicio 10: Libros con año > 2000 Y páginas > 500
+            System.out.println("E10 - Libros > 2000 y > 500 páginas:");
+            colLibros.find(Filters.and(Filters.gt("año", 2000), Filters.gt("paginas", 500)))
+                .forEach(l -> System.out.println("  * " + l.getString("titulo")));
+
+            // Ejercicio 11: Libros editados entre 2010 y 2020
+            System.out.println("E11 - Libros entre 2010 y 2020:");
+            colLibros.find(Filters.and(Filters.gte("año", 2010), Filters.lte("año", 2020)))
+                .forEach(l -> System.out.println("  * " + l.getString("titulo") + " (" + l.get("año") + ")"));
+
+            // Ejercicio 12: Libros de la editorial 'Debolsillo'
+            System.out.println("E12 - Libros editorial Debolsillo:");
+            colLibros.find(Filters.eq("editorial", "Debolsillo"))
+                .forEach(l -> System.out.println("  * " + l.getString("titulo")));
+
+            // Ejercicio 13: Nombre del socio número 2
+            Document s2 = colSocios.find(Filters.or(Filters.eq("num_socio", 2), Filters.eq("num_socio", "2"))).first();
+            System.out.println("E13 - Socio 2: " + (s2 != null ? s2.getString("nombre") : "No encontrado"));
+
+            // Ejercicio 14: Autor americano O editorial Planeta
+            System.out.println("E14 - Autor americano o editorial Planeta:");
+            colLibros.find(Filters.or(
+                Filters.eq("autor.nacionalidad", "Americana"),
+                Filters.eq("editorial", "Planeta")
+            )).forEach(l -> System.out.println("  * " + l.getString("titulo")));
+
+            // Ejercicio 15: Fecha de préstamo del socio 1 (Ojo: num_socio es String "1" en Prestamos)
+            System.out.println("E15 - Fechas préstamo socio 1:");
+            colPrestamos.find(Filters.or(Filters.eq("num_socio", "1"), Filters.eq("num_socio", 1)))
+                .forEach(p -> System.out.println("  * Fecha: " + p.get("fecha_prestamo")));
+
+            // Ejercicio 16: Libros editados entre 1990 y 2000
+            System.out.println("E16 - Libros entre 1990 y 2000:");
+            colLibros.find(Filters.and(Filters.gte("año", 1990), Filters.lte("año", 2000)))
+                .forEach(l -> System.out.println("  * " + l.getString("titulo")));
+        }
+    }
+}
+</script>
+
+<script type="text/plain" class="code" data-title="Biblioteca — Ejercicios 17 al 22: Asimov, cruces inversos, proyecciones y ordenación" data-tags="biblioteca asimov cruce sort proyeccion activo ejercicios 17 a 22" data-lang="java">
+import com.mongodb.client.*;
+import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.Projections;
+import com.mongodb.client.model.Sorts;
+import org.bson.Document;
+
+public class Biblioteca_17_a_22 {
+    public static void main(String[] args) {
+        try (MongoClient mongo = MongoClients.create("mongodb://localhost:27017")) {
+            MongoDatabase db = mongo.getDatabase("Biblioteca");
+            MongoCollection<Document> colLibros = db.getCollection("Libros");
+            MongoCollection<Document> colSocios = db.getCollection("Socios");
+            MongoCollection<Document> colPrestamos = db.getCollection("Prestamos");
+
+            // Ejercicio 17: Libros escritos por Isaac Asimov
+            System.out.println("E17 - Libros de Isaac Asimov:");
+            colLibros.find(Filters.and(Filters.eq("autor.nombre", "Isaac"), Filters.eq("autor.apellidos", "Asimov")))
+                .forEach(l -> System.out.println("  * " + l.getString("titulo")));
+
+            // Ejercicio 18: Socios que han pedido 'El Quijote'
+            Document quijote = colLibros.find(Filters.eq("titulo", "El Quijote")).first();
+            if (quijote != null) {
+                Object isbn = quijote.get("isbn");
+                System.out.println("E18 - Socios con 'El Quijote' prestado:");
+                colPrestamos.find(Filters.elemMatch("libros", Filters.eq("isbn", isbn))).forEach(p -> {
+                    Object nSocio = p.get("num_socio");
+                    Document s = colSocios.find(Filters.or(Filters.eq("num_socio", nSocio), Filters.eq("num_socio", String.valueOf(nSocio)))).first();
+                    if (s != null) System.out.println("  * " + s.getString("nombre") + " " + s.getString("apellidos"));
+                });
+            }
+
+            // Ejercicio 19: Libros prestados al socio «Javier García»
+            Document javier = colSocios.find(Filters.and(Filters.eq("nombre", "Javier"), Filters.eq("apellidos", "García"))).first();
+            if (javier != null) {
+                Object nSocio = javier.get("num_socio");
+                System.out.println("E19 - Libros prestados a Javier García:");
+                colPrestamos.find(Filters.or(Filters.eq("num_socio", nSocio), Filters.eq("num_socio", String.valueOf(nSocio)))).forEach(p -> {
+                    p.getList("libros", Document.class).forEach(lib -> {
+                        Document docLibro = colLibros.find(Filters.eq("isbn", lib.get("isbn"))).first();
+                        if (docLibro != null) System.out.println("  * " + docLibro.getString("titulo"));
+                    });
+                });
+            }
+
+            // Ejercicio 20: Título y autor de editorial Planeta ordenados por año ascendente
+            System.out.println("E20 - Libros Planeta ordenados por año:");
+            colLibros.find(Filters.eq("editorial", "Planeta"))
+                .sort(Sorts.ascending("año"))
+                .forEach(l -> {
+                    Document aut = l.get("autor", Document.class);
+                    String autorNom = (aut != null) ? aut.getString("nombre") + " " + aut.getString("apellidos") : "Desconocido";
+                    System.out.println("  * " + l.get("año") + ": " + l.getString("titulo") + " (Autor: " + autorNom + ")");
+                });
+
+            // Ejercicio 21: Proyección de título y editorial ordenados por páginas
+            System.out.println("E21 - Proyección (título y editorial) ordenados por páginas:");
+            colLibros.find()
+                .projection(Projections.fields(Projections.include("titulo", "editorial", "paginas"), Projections.excludeId()))
+                .sort(Sorts.ascending("paginas"))
+                .forEach(l -> System.out.println("  * " + l.toJson()));
+
+            // Ejercicio 22: Título de libros que tienen algún préstamo
+            System.out.println("E22 - Libros con algún préstamo registrado:");
+            colPrestamos.distinct("libros.isbn", Integer.class).forEach(isbn -> {
+                Document l = colLibros.find(Filters.eq("isbn", isbn)).first();
+                if (l != null) System.out.println("  * " + l.getString("titulo") + " (ISBN: " + isbn + ")");
+            });
+        }
+    }
+}
+</script>
+
+<div class="ex-box">
+  <div class="ex-header">
+    <h3>Prácticas de Ampliación UD1 — POJO Persona con Gson y Carga en BD Cocina</h3>
+    <span class="ex-tag">Ampliación 1 y Ampliación 2</span>
+  </div>
+  <div class="ex-body">
+    <div class="ex-statement"><b>Ampliación 1:</b> A partir de la BD Concesionario, obtener los propietarios (Personas) de city «London». Crear un POJO Persona con sus atributos propios. Obtener los documentos de MongoDB, deserializarlos a un <code>ArrayList&lt;Persona&gt;</code> mediante Gson y recorrerlo por consola.<br><br>
+    <b>Ampliación 2:</b> Crear una nueva BD Mongo <code>Cocina</code> con la colección <code>platos</code>. Leer el fichero <code>Platos.json</code> desde Java e insertar cada plato en la BD usando <code>Document.parse()</code>.</div>
+  </div>
+</div>
+<script type="text/plain" class="code" data-title="Ampliación 1 — Personas London -> ArrayList<Persona> con Gson" data-tags="ampliacion london pojo persona arraylist gson fromjson mongo documento" data-lang="java">
+import java.util.ArrayList;
+import com.google.gson.Gson;
+import com.mongodb.client.*;
+import com.mongodb.client.model.Filters;
+import org.bson.Document;
+
+public class Ampliacion1_London {
+    public static void main(String[] args) {
+        ArrayList<Persona> personasLondon = new ArrayList<>();
+        Gson gson = new Gson();
+
+        try (MongoClient mongo = MongoClients.create("mongodb://localhost:27017")) {
+            MongoDatabase db = mongo.getDatabase("Concesionario");
+            MongoCollection<Document> colPersonas = db.getCollection("Personas");
+
+            // Filtrar personas con city == "London"
+            try (MongoCursor<Document> cur = colPersonas.find(Filters.eq("city", "London")).iterator()) {
+                while (cur.hasNext()) {
+                    Document doc = cur.next();
+                    // Conversión Document -> JSON String -> Objeto POJO Persona
+                    Persona p = gson.fromJson(doc.toJson(), Persona.class);
+                    personasLondon.add(p);
+                }
+            }
+
+            System.out.println("Total personas de London recuperadas: " + personasLondon.size());
+            for (Persona p : personasLondon) {
+                System.out.println("- " + p.getNombre() + " " + p.getApellidos() + " | Edad: " + p.getAge());
+            }
+        }
+    }
+}
+</script>
+
+<script type="text/plain" class="code" data-title="Ampliación 2 — Carga de Platos.json a BD Cocina con Document.parse()" data-tags="ampliacion cocina platos insertar json document parse filereader mongo" data-lang="java">
+import java.io.FileReader;
+import java.util.ArrayList;
+import java.util.List;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
+import com.mongodb.client.*;
+import org.bson.Document;
+
+public class Ampliacion2_CargarPlatos {
+    public static void main(String[] args) {
+        try (MongoClient mongo = MongoClients.create("mongodb://localhost:27017")) {
+            // Se crea automáticamente la base de datos Cocina y la colección platos
+            MongoDatabase db = mongo.getDatabase("Cocina");
+            MongoCollection<Document> colPlatos = db.getCollection("platos");
+
+            // Limpiar colección previa si se desea recargar
+            colPlatos.drop();
+
+            // Leer Platos.json como JsonArray
+            JsonArray arrayPlatos;
+            try (FileReader reader = new FileReader("ficheros/Platos.json")) {
+                arrayPlatos = JsonParser.parseReader(reader).getAsJsonArray();
+            }
+
+            List<Document> docsParaInsertar = new ArrayList<>();
+            for (JsonElement el : arrayPlatos) {
+                // Document.parse() convierte cada JSON String de plato en un Document BSON
+                Document docPlato = Document.parse(el.toString());
+                docsParaInsertar.add(docPlato);
+            }
+
+            // Inserción por lotes en MongoDB
+            colPlatos.insertMany(docsParaInsertar);
+            System.out.println("¡Éxito! Se han insertado " + colPlatos.countDocuments() + " platos en Cocina.platos");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+</script>
+</section>
+
+<section id="ejercicios-json" data-tab="ejercicios">
+<h2>Ejercicios Resueltos — JSON (Cocina y Productos)</h2>
+<p class="lead">Soluciones completas de las prácticas de aula (Practica1 Cocina y ejProductos) implementadas con JSON.simple, Gson y JsonPath.</p>
+
+<div class="ex-box">
+  <div class="ex-header">
+    <h3>Práctica Cocina — Ejercicios 1, 2, 3 y 4 (Huevos mínimos)</h3>
+    <span class="ex-tag">org.json.simple + Parsing de Unidades</span>
+  </div>
+  <div class="ex-body">
+    <div class="ex-statement"><b>Enunciados:</b><br>
+    <b>1.</b> Obtener los ingredientes del plato «Gazpacho».<br>
+    <b>2.</b> Obtener qué platos llevan «Tomate» como ingrediente.<br>
+    <b>3.</b> Obtener qué platos se ofrecen como «Primero» y qué ingredientes tienen.<br>
+    <b>4.</b> Obtener qué cantidad de huevos necesito tener para poder ofrecer al menos 3 platos de los que necesitan huevo. ¿Puedes extraer esta información? ¿Cuál es el problema y cómo lo solucionarías?</div>
+    <div class="ex-explain">
+      <b>Explicación técnica del Ejercicio 4 (Pregunta clave de examen):</b>
+      <ul>
+        <li><b>El problema:</b> En el fichero <code>Platos.json</code>, el atributo <code>cantidad</code> no es numérico, sino un <code>String</code> que concatena el valor y la unidad de medida (por ejemplo: <code>"4 ud"</code> o <code>"500 g"</code>). No es posible aplicar operaciones aritméticas ni agregados matemáticos directamente sobre dicho campo.</li>
+        <li><b>La solución:</b> Se extrae el valor como cadena, se separa por el espacio en blanco mediante <code>cantidad.split(" ")[0]</code> para aislar la parte numérica, y se convierte a entero con <code>Integer.parseInt()</code>. Posteriormente se acumula o calcula la cantidad necesaria para los 3 platos.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+<script type="text/plain" class="code" data-title="Cocina — Ejercicios 1 a 4 con org.json.simple" data-tags="cocina gazpacho tomate primero huevos split parseint json.simple ejercicios" data-lang="java">
+import java.io.FileReader;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+
+public class Practica1_Cocina {
+    public static void main(String[] args) {
+        JSONParser parser = new JSONParser();
+
+        try (FileReader reader = new FileReader("ficheros/Platos.json")) {
+            JSONArray platosArray = (JSONArray) parser.parse(reader);
+
+            // 1. Ingredientes del Gazpacho
+            System.out.println("=== 1. Ingredientes del Gazpacho ===");
+            for (Object obj : platosArray) {
+                JSONObject plato = (JSONObject) obj;
+                if ("Gazpacho".equalsIgnoreCase((String) plato.get("nombre"))) {
+                    JSONArray ingArray = (JSONArray) plato.get("ingredientes");
+                    for (Object ingObj : ingArray) {
+                        JSONObject ing = (JSONObject) ingObj;
+                        System.out.println("- " + ing.get("nombre") + ": " + ing.get("cantidad"));
+                    }
+                }
+            }
+
+            // 2. Platos que llevan Tomate
+            System.out.println("\n=== 2. Platos que llevan Tomate ===");
+            for (Object obj : platosArray) {
+                JSONObject plato = (JSONObject) obj;
+                JSONArray ingArray = (JSONArray) plato.get("ingredientes");
+                for (Object ingObj : ingArray) {
+                    JSONObject ing = (JSONObject) ingObj;
+                    if ("Tomate".equalsIgnoreCase((String) ing.get("nombre"))) {
+                        System.out.println("- " + plato.get("nombre"));
+                        break;
+                    }
+                }
+            }
+
+            // 3. Platos de tipo Primero y sus ingredientes
+            System.out.println("\n=== 3. Platos tipo 'Primero' ===");
+            for (Object obj : platosArray) {
+                JSONObject plato = (JSONObject) obj;
+                if ("Primero".equalsIgnoreCase((String) plato.get("tipo"))) {
+                    System.out.println("Plato: " + plato.get("nombre"));
+                    JSONArray ingArray = (JSONArray) plato.get("ingredientes");
+                    for (Object ingObj : ingArray) {
+                        JSONObject ing = (JSONObject) ingObj;
+                        System.out.println("  * " + ing.get("nombre") + " (" + ing.get("cantidad") + ")");
+                    }
+                }
+            }
+
+            // 4. Huevos necesarios para ofrecer al menos 3 platos con huevo
+            System.out.println("\n=== 4. Cálculo de Huevos Mínimos ===");
+            int totalHuevos = 0;
+            int platosConHuevo = 0;
+
+            for (Object obj : platosArray) {
+                JSONObject plato = (JSONObject) obj;
+                JSONArray ingArray = (JSONArray) plato.get("ingredientes");
+                for (Object ingObj : ingArray) {
+                    JSONObject ing = (JSONObject) ingObj;
+                    if ("Huevo".equalsIgnoreCase((String) ing.get("nombre"))) {
+                        String cantStr = (String) ing.get("cantidad");
+                        // Split para separar el número de la unidad "ud"
+                        int cantNum = Integer.parseInt(cantStr.split(" ")[0]);
+                        totalHuevos += cantNum;
+                        platosConHuevo++;
+                        System.out.println("Plato con huevo: " + plato.get("nombre") + " requiere " + cantNum + " huevos.");
+                        break;
+                    }
+                }
+            }
+            System.out.println("Total de huevos necesarios para los " + platosConHuevo + " platos encontrados: " + totalHuevos + " unidades.");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+</script>
+
+<div class="ex-box">
+  <div class="ex-header">
+    <h3>Práctica Productos — Ejercicios 1 al 8 (ejProductos.java)</h3>
+    <span class="ex-tag">Navegación + Tipos Long/Double + Subobjetos</span>
+  </div>
+  <div class="ex-body">
+    <div class="ex-statement"><b>Enunciados de Productos:</b><br>
+    <b>1.</b> Mostrar el nombre de todos los productos.<br>
+    <b>2.</b> Mostrar el nombre y precio de los productos de tipo «Ropa».<br>
+    <b>3.</b> Buscar «Pantalones Levi's 501» y mostrar todo su objeto JSON.<br>
+    <b>4.</b> Nombre y stock de productos en «Almacén 1» con precio &lt; 150.0.<br>
+    <b>5.</b> Nombre y ubicación completa de productos con stock &lt; 50.<br>
+    <b>6.</b> Nombre y tipo de productos ubicados en «Almacén 3» y «Pasillo 3».<br>
+    <b>7.</b> Nombre de los productos que pertenezcan a la categoría «Deportes».<br>
+    <b>8.</b> Contar el número total de productos deportivos.</div>
+  </div>
+</div>
+<script type="text/plain" class="code" data-title="Productos — Ejercicios 1 a 8 con org.json.simple" data-tags="productos ropa almacen stock levis deportes json.simple array embebido 1 a 8" data-lang="java">
+import java.io.FileReader;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+
+public class Ejercicios_Productos {
+    public static void main(String[] args) {
+        JSONParser parser = new JSONParser();
+
+        try (FileReader reader = new FileReader("ficheros/productos.json")) {
+            JSONArray prodArray = (JSONArray) parser.parse(reader);
+
+            // 1. Nombre de todos los productos
+            System.out.println("=== 1. Todos los productos ===");
+            for (Object obj : prodArray) {
+                JSONObject p = (JSONObject) obj;
+                System.out.println("- " + p.get("nombre_producto"));
+            }
+
+            // 2. Productos de tipo Ropa (nombre y precio)
+            System.out.println("\n=== 2. Productos de tipo 'Ropa' ===");
+            for (Object obj : prodArray) {
+                JSONObject p = (JSONObject) obj;
+                if ("Ropa".equals(p.get("tipo_producto"))) {
+                    System.out.println("- " + p.get("nombre_producto") + " | Precio: " + p.get("precio") + " €");
+                }
+            }
+
+            // 3. Pantalones Levi's 501 (todo el JSON)
+            System.out.println("\n=== 3. Pantalones Levi's 501 ===");
+            for (Object obj : prodArray) {
+                JSONObject p = (JSONObject) obj;
+                if ("Pantalones Levi's 501".equals(p.get("nombre_producto"))) {
+                    System.out.println(p.toJSONString());
+                }
+            }
+
+            // 4. Almacén 1 con precio < 150.0 (nombre y stock)
+            System.out.println("\n=== 4. Almacén 1 y precio < 150 ===");
+            for (Object obj : prodArray) {
+                JSONObject p = (JSONObject) obj;
+                JSONObject ubic = (JSONObject) p.get("ubicacion");
+                String alm = (ubic != null) ? (String) ubic.get("almacen") : "";
+                double precio = ((Number) p.get("precio")).doubleValue();
+
+                if ("Almacén 1".equals(alm) && precio < 150.0) {
+                    System.out.println("- " + p.get("nombre_producto") + " | Stock: " + p.get("stock"));
+                }
+            }
+
+            // 5. Stock < 50 (nombre y ubicación completa)
+            System.out.println("\n=== 5. Stock < 50 ===");
+            for (Object obj : prodArray) {
+                JSONObject p = (JSONObject) obj;
+                long stock = ((Number) p.get("stock")).longValue();
+                if (stock < 50) {
+                    JSONObject ubic = (JSONObject) p.get("ubicacion");
+                    System.out.println("- " + p.get("nombre_producto") + " | Ubicación: " + (ubic != null ? ubic.toJSONString() : "N/A"));
+                }
+            }
+
+            // 6. Almacén 3 y Pasillo 3
+            System.out.println("\n=== 6. Almacén 3 y Pasillo 3 ===");
+            for (Object obj : prodArray) {
+                JSONObject p = (JSONObject) obj;
+                JSONObject ubic = (JSONObject) p.get("ubicacion");
+                if (ubic != null && "Almacén 3".equals(ubic.get("almacen")) && "Pasillo 3".equals(ubic.get("pasillo"))) {
+                    System.out.println("- " + p.get("nombre_producto") + " (" + p.get("tipo_producto") + ")");
+                }
+            }
+
+            // 7 y 8. Categoría Deportes y conteo
+            System.out.println("\n=== 7 y 8. Categoría 'Deportes' ===");
+            int totalDeportes = 0;
+            for (Object obj : prodArray) {
+                JSONObject p = (JSONObject) obj;
+                JSONArray cats = (JSONArray) p.get("categorias");
+                if (cats != null && cats.contains("Deportes")) {
+                    totalDeportes++;
+                    System.out.println("- " + p.get("nombre_producto"));
+                }
+            }
+            System.out.println("Total productos de Deportes: " + totalDeportes);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+</script>
+
+<div class="ex-box">
+  <div class="ex-header">
+    <h3>Productos Ejercicio 9 — Inserción Interactiva y Volcado con Gson Pretty Printing</h3>
+    <span class="ex-tag">Scanner + JsonObject + FileWriter</span>
+  </div>
+  <div class="ex-body">
+    <div class="ex-statement"><b>Enunciado:</b> Solicita al usuario por teclado los datos de un nuevo producto (nombre, precio, stock, tipo, almacén, estantería, pasillo y categorías). Constrúyelo en memoria, añádelo al array existente y guárdalo formateado en el archivo <code>productos.json</code> con <code>GsonBuilder().setPrettyPrinting()</code>.</div>
+  </div>
+</div>
+<script type="text/plain" class="code" data-title="Productos 9 — Pedir producto por teclado y guardar con Gson" data-tags="productos scanner insertar teclado jsonobject array filewriter prettyprinting ejercicio 9" data-lang="java">
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.Writer;
+import java.util.Scanner;
+import com.google.gson.*;
+
+public class InsertarProductoInteractivo {
+    public static void main(String[] args) {
+        Scanner tec = new Scanner(System.in);
+
+        System.out.print("Nombre del producto: ");
+        String nombre = tec.nextLine();
+
+        System.out.print("Precio: ");
+        double precio = tec.nextDouble();
+
+        System.out.print("Stock: ");
+        long stock = tec.nextLong();
+        tec.nextLine(); // Limpiar búfer
+
+        System.out.print("Tipo de producto (ej. Ropa, Electrónica): ");
+        String tipo = tec.nextLine();
+
+        System.out.print("Almacén (ej. Almacén 1): ");
+        String alm = tec.nextLine();
+
+        System.out.print("Estantería: ");
+        String est = tec.nextLine();
+
+        System.out.print("Pasillo: ");
+        String pas = tec.nextLine();
+
+        // 1. Construir el nuevo objeto JsonObject con Gson
+        JsonObject nuevoProd = new JsonObject();
+        nuevoProd.addProperty("nombre_producto", nombre);
+        nuevoProd.addProperty("precio", precio);
+        nuevoProd.addProperty("stock", stock);
+        nuevoProd.addProperty("tipo_producto", tipo);
+
+        // Subobjeto anidado ubicacion
+        JsonObject ubic = new JsonObject();
+        ubic.addProperty("almacen", alm);
+        ubic.addProperty("estanteria", est);
+        ubic.addProperty("pasillo", pas);
+        nuevoProd.add("ubicacion", ubic);
+
+        // Array anidado categorias
+        JsonArray categorias = new JsonArray();
+        categorias.add(tipo);
+        nuevoProd.add("categorias", categorias);
+
+        // 2. Cargar el array existente del archivo
+        JsonArray productosArray;
+        try (FileReader reader = new FileReader("ficheros/productos.json")) {
+            productosArray = JsonParser.parseReader(reader).getAsJsonArray();
+        } catch (Exception e) {
+            productosArray = new JsonArray(); // Si no existía, crear array nuevo
+        }
+
+        // 3. Añadir el nuevo elemento al array
+        productosArray.add(nuevoProd);
+
+        // 4. Volcar todo el array formateado a disco
+        try (Writer writer = new FileWriter("ficheros/productos.json")) {
+            Gson gson = new GsonBuilder().setPrettyPrinting().create();
+            gson.toJson(productosArray, writer);
+            System.out.println("¡Producto insertado con éxito en productos.json!");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+</script>
+</section>
+
+</main>
+</div>
+
+<script>
+(function(){
+  var TABS = {jdbc:'JDBC', mongodb:'MongoDB', json:'JSON', ejercicios:'Ejercicios'};
+  var KW = /^(abstract|boolean|break|case|catch|char|class|continue|default|do|double|else|extends|final|finally|float|for|if|implements|import|instanceof|int|long|new|null|package|private|public|return|static|super|this|throw|throws|true|false|try|void|while|var|switch)$/;
+  function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+  function span(c,s){return '<span class="'+c+'">'+esc(s)+'</span>';}
+
+  function hlJava(src){
+    var re=/(\/\*[\s\S]*?\*\/|\/\/[^\n]*)|("(?:\\.|[^"\\\n])*")|(\b\d+(?:\.\d+)?[LDdf]?\b)|(@\w+)|([A-Za-z_]\w*)/g, out='', last=0, m;
+    while((m=re.exec(src))){
+      out+=esc(src.slice(last,m.index)); last=re.lastIndex;
+      if(m[1]) out+=span('c',m[0]); else if(m[2]) out+=span('s',m[0]); else if(m[3]) out+=span('n',m[0]);
+      else if(m[4]) out+=span('a',m[0]);
+      else if(KW.test(m[0])) out+=span('k',m[0]);
+      else if(/^[A-Z]/.test(m[0])) out+=span('t',m[0]);
+      else if(src.charAt(last)==='(') out+=span('f',m[0]);
+      else out+=esc(m[0]);
+    }
+    return out+esc(src.slice(last));
+  }
+  function hlXml(src){
+    var re=/(<!--[\s\S]*?-->)|(<\/?[\w:.-]+)/g, out='', last=0, m;
+    while((m=re.exec(src))){
+      out+=esc(src.slice(last,m.index)); last=re.lastIndex;
+      out+= m[1] ? span('c',m[0]) : span('k',m[0]);
+    }
+    return out+esc(src.slice(last));
+  }
+  function hlShell(src){
+    var re=/(--[\w-]+)|(^(?:cd|mongoimport|mongoexport|mongodump|mongorestore|mongosh|show|use)\b)/gm, out='', last=0, m;
+    while((m=re.exec(src))){
+      out+=esc(src.slice(last,m.index)); last=re.lastIndex;
+      out+= m[1] ? span('n',m[0]) : span('f',m[0]);
+    }
+    return out+esc(src.slice(last));
+  }
+  function inlineCode(line){
+    return line.split(/("[^"]*"|\b[\w.]+\([^()]*\)|\b[A-Z][A-Za-z]*Exception\b|\b[A-Z][A-Z_]{4,}\b|\bnull\b)/).map(function(p,i){
+      return i%2 ? '<code>'+esc(p)+'</code>' : esc(p);
+    }).join('');
+  }
+
+  // 1) Bloques de código / listas
+  document.querySelectorAll('script.code').forEach(function(s){
+    var text = s.textContent.replace(/^\n/, '').replace(/\s+$/, '');
+    var lang = s.dataset.lang || (text.charAt(0)==='<' ? 'xml' : 'java');
+    var wrap = document.createElement('div');
+    wrap.className = 'block';
+    wrap.dataset.search = ((s.dataset.title||'')+' '+(s.dataset.tags||'')+' '+text).toLowerCase();
+    wrap.dataset.head = ((s.dataset.title||'')+' '+(s.dataset.tags||'')).toLowerCase();
+    var head = document.createElement('div'); head.className='bh';
+    var h3 = document.createElement('h3'); h3.textContent = s.dataset.title||'';
+    head.appendChild(h3);
+    wrap.appendChild(head);
+
+    if (lang==='list') {
+      var ul = document.createElement('ul'); ul.className='checks';
+      text.split('\n').forEach(function(l){
+        l = l.replace(/^\s*-\s*/, ''); if(!l) return;
+        var li = document.createElement('li'); li.innerHTML = inlineCode(l); ul.appendChild(li);
+      });
+      wrap.appendChild(ul);
+    } else {
+      var btn = document.createElement('button'); btn.className='copy'; btn.type='button'; btn.textContent='Copiar';
+      head.appendChild(btn);
+      var pre = document.createElement('pre'), code = document.createElement('code');
+      code.innerHTML = lang==='xml' ? hlXml(text) : lang==='shell' ? hlShell(text) : hlJava(text);
+      code.style.background='none'; code.style.padding='0'; code.style.font='inherit';
+      pre.tabIndex = 0; pre.appendChild(code); wrap.appendChild(pre);
+      btn.addEventListener('click', function(){
+        function ok(){ btn.textContent='¡Copiado!'; btn.classList.add('ok'); setTimeout(function(){btn.textContent='Copiar'; btn.classList.remove('ok');},1400); }
+        function fallback(){
+          var ta=document.createElement('textarea'); ta.value=text; ta.style.cssText='position:fixed;opacity:0';
+          document.body.appendChild(ta); ta.select();
+          try{document.execCommand('copy'); ok();}catch(e){}
+          document.body.removeChild(ta);
+        }
+        if(navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(text).then(ok, fallback); else fallback();
+      });
+    }
+    s.parentNode.replaceChild(wrap, s);
+  });
+
+  // 2) Estado, navegación y buscador
+  var nav=document.getElementById('nav'), q=document.getElementById('q'), count=document.getElementById('count'),
+      empty=document.getElementById('empty'), tabsEl=document.getElementById('tabs'),
+      sections=[].slice.call(document.querySelectorAll('main section')), active='jdbc';
+
+  sections.forEach(function(sec){
+    var chip=document.createElement('span'); chip.className='chip'; chip.textContent=TABS[sec.dataset.tab]||'';
+    var h2 = sec.querySelector('h2');
+    if(h2) h2.appendChild(chip);
+  });
+
+  function buildNav(){
+    nav.innerHTML='';
+    sections.forEach(function(sec){
+      if(sec.dataset.tab!==active || sec.classList.contains('hide')) return;
+      var h2 = sec.querySelector('h2');
+      if(!h2) return;
+      var a=document.createElement('a'); a.href='#'+sec.id; a.textContent=h2.childNodes[0].textContent.trim(); a.dataset.target=sec.id;
+      a.addEventListener('click',function(e){e.preventDefault(); sec.scrollIntoView();});
+      nav.appendChild(a);
+    });
+    spy();
+  }
+  function spy(){
+    var cur=null;
+    sections.forEach(function(sec){
+      if(sec.dataset.tab===active && !sec.classList.contains('hide') && sec.getBoundingClientRect().top<160) cur=sec.id;
+    });
+    if(!cur){ var f=nav.firstChild; cur=f&&f.dataset.target; }
+    [].forEach.call(nav.children,function(a){a.classList.toggle('active',a.dataset.target===cur);});
+  }
+
+  function filtrar(){
+    var terms=q.value.toLowerCase().split(/\s+/).filter(Boolean);
+    var per={jdbc:0,mongodb:0,json:0,ejercicios:0};
+    sections.forEach(function(sec){
+      var vis=0, blocks=sec.querySelectorAll('.block');
+      blocks.forEach(function(b){
+        var ok=terms.every(function(t){return b.dataset.search.indexOf(t)!==-1;});
+        b.classList.toggle('hide',!ok); if(ok) vis++;
+      });
+      var h2 = sec.querySelector('h2');
+      var secText=((h2 ? h2.textContent : '')+' '+(sec.querySelector('.lead')||{textContent:''}).textContent).toLowerCase();
+      if(terms.length && vis===0 && terms.every(function(t){return secText.indexOf(t)!==-1;})){
+        blocks.forEach(function(b){b.classList.remove('hide'); vis++;});
+      }
+      sec.classList.toggle('hide',vis===0);
+      sec.classList.toggle('off',sec.dataset.tab!==active);
+      if(per[sec.dataset.tab] !== undefined) per[sec.dataset.tab]+=vis;
+    });
+    [].forEach.call(tabsEl.children,function(b){
+      var t=b.dataset.tab;
+      var total = document.querySelectorAll('section[data-tab="'+t+'"] .block').length;
+      var n = terms.length ? (per[t]||0) : total;
+      var sm = b.querySelector('small');
+      if(sm) sm.textContent = n;
+      b.classList.toggle('has',!!terms.length && n>0);
+      b.setAttribute('aria-selected',t===active);
+    });
+    document.querySelectorAll('.note, .ex-box').forEach(function(n){
+      if(terms.length){
+        var txt = n.textContent.toLowerCase();
+        var match = terms.every(function(t){return txt.indexOf(t)!==-1;});
+        n.style.display = match ? '' : 'none';
+      } else {
+        n.style.display = '';
+      }
+    });
+    count.textContent=terms.length ? (per[active]||0)+' en '+TABS[active] : '';
+    if(terms.length && (per[active]||0)===0){
+      var others=Object.keys(per).filter(function(t){return per[t]>0;});
+      empty.style.display='block';
+      empty.innerHTML=others.length ? 'Nada en '+TABS[active]+'. Hay resultados en:<br>' : 'Sin resultados. Prueba con otra palabra.';
+      others.forEach(function(t){
+        var b=document.createElement('button');
+        b.textContent=TABS[t]+' ('+per[t]+')';
+        b.onclick=function(){setTab(t);};
+        empty.appendChild(b);
+      });
+    } else empty.style.display='none';
+    buildNav();
+  }
+
+  function setTab(t, noScroll){
+    active=t; document.documentElement.dataset.tab=t;
+    try{ history.replaceState(null,'','#'+t); localStorage.setItem('chuleta-tab',t); }catch(e){}
+    filtrar(); if(!noScroll) window.scrollTo(0,0);
+  }
+  [].forEach.call(tabsEl.children,function(b){b.addEventListener('click',function(){setTab(b.dataset.tab);});});
+  q.addEventListener('input',filtrar);
+  window.addEventListener('scroll',function(){requestAnimationFrame(spy);},{passive:true});
+  document.addEventListener('keydown',function(e){
+    if(e.key==='/' && document.activeElement!==q){e.preventDefault(); q.focus(); q.select();}
+    if(e.key==='Escape'){q.value=''; filtrar(); q.blur();}
+  });
+
+  // 3) Analizador de enunciados (offline, por palabras clave)
+  function N(s){return s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();}
+  var CON=[
+   ['teclado','Pedir datos al usuario','teclad|introduc|pide |pedir|solicit|scanner|por pantalla','Tras nextInt()/nextDouble() anade tec.nextLine(), o el siguiente nextLine() leera vacio.',['scanner','teclado','nextline']],
+   ['select','Consulta de lectura','muestr|list|visualiz|obten|consult|devuelv|cuales|selecciona|nombre de|que .* (han|tienen)','En JDBC usa ? y pstmt.setXxx(n, valor); los indices empiezan en 1.',['select','preparedstatement','resultset']],
+   ['group','Agrupar / contar por grupo','por cada|agrup|por equipo|por categoria|cuantos .* por|group by','Todas las columnas del SELECT deben ir en el GROUP BY (ONLY_FULL_GROUP_BY).',['group by','count']],
+   ['having','Condicion sobre el grupo','al menos \\d|mas de \\d|menos de \\d \\w+ (ganad|vend|realiz)|having','Si filtras por un COUNT/SUM, va en HAVING, no en WHERE.',['having']],
+   ['insert','Insertar','inserta|insertar|insercion|anad|dar de alta|\\balta\\b|registr|nuevo|nueva','Comprueba antes lo que pida el enunciado (existe, maximos, rangos).',['insert','insertone','executeupdate']],
+   ['update','Actualizar','actualiz|modific|cambia|incrementa|asigna|sustituye','Comprueba las filas afectadas que devuelve executeUpdate().',['update','updateone','executeupdate']],
+   ['delete','Borrar','elimin|borra|borrar|suprim|delete','Si borras en varias tablas, hazlo dentro de una transaccion.',['delete','deleteone','executeupdate']],
+   ['control','Validar antes de operar','comprueb|valid|verific|control|restric|solo si|no (puede|se permite|debe)|maximo|minimo|entre \\d+ y \\d+|debe existir|existe|no existe','Haz cada comprobacion con su propia consulta y corta con un mensaje claro si falla.',['restriccion','existe','comprobar','validar']],
+   ['dup','Clave duplicada / integridad','duplicad|ya existe|clave primaria|integridad','Tambien puedes capturar la excepcion de integridad en lugar de consultar antes.',['duplicada','1062','integridad']],
+   ['trans','Transaccion','transaccion|todo o nada|rollback|commit|atomic|fusion|fusionar|si falla|si algo falla','setAutoCommit(false) -> commit() si todo va bien, rollback() en el catch.',['transaccion','rollback','commit']],
+   ['filtro','Filtrar por condicion','mayor|menor|superior|inferior|igual|distint|entre|contiene|empieza|filtr|cuyo|cuyos|que sea|que tenga','En Mongo respeta el tipo del campo (String != Integer) y las mayusculas.',['filters','find']],
+   ['sort','Ordenar','ordena|ascendente|descendente|de mayor a menor|de menor a mayor|ordenad','Una fecha en String solo ordena bien si esta en formato YYYY-MM-DD.',['sort','sorts','order by']],
+   ['limit','Limitar resultados','primer|primeros|primera|primeras|el mas |la mas |maximo|minimo|top \\d|solo \\d','Combinalo con ordenacion para obtener el maximo o minimo.',['limit','first']],
+   ['proy','Proyeccion (pocos campos)','solo el|solo los|unicamente|muestra (el|la|los|las) (nombre|precio|fecha|matricula)','En Mongo usa Projections.include() / excludeId().',['projections','projection']],
+   ['fechas','Manejo de Fechas','fecha|fechas|date|localdatetime|timestamp|between|salida|devolucion','Usa java.sql.Date para fechas puras y java.sql.Timestamp para fecha+hora.',['fecha','timestamp','localdatetime','date']],
+   ['scroll','ResultSet desplazable / actualizable','scroll|updatable|desplaz|actualiz.*resultset|insertrow|updaterow|absolute|relative|first|last','Usa TYPE_SCROLL_SENSITIVE y CONCUR_UPDATABLE al crear el Statement.',['scroll','updatable','insertrow','updaterow']],
+   ['embeb','Documento embebido / array','ubicacion|ingrediente|ingredientes|revision|revisiones|coches|libros|categorias','En Mongo usa doc.get("campo", Document.class) o doc.getList().',['embebido','array','list','getlist']],
+   ['elem','Buscar dentro de un array','que contenga|que incluya|que lleve|en su lista|elemMatch','En Mongo usa Filters.elemMatch() o simplemente Filters.eq("array.campo", val).',['elemmatch','regex','contains']],
+   ['agg','Agregacion compleja (aggregate)','quien mas|el que mas|suma total|gasto total|promedio|media|mas dinero','En Mongo usa aggregate() con $match, $group, $sort y $limit.',['aggregate','group','accumulators']],
+   ['pojo','Mapear a clase POJO','pojo|clase persona|arraylist<|gson\.fromjson|typestring|typetoken','Recuerda que los nombres de los atributos deben coincidir o usar @SerializedName.',['pojo','gson','fromjson']],
+   ['fich','Leer o escribir fichero','fichero|archivo|file|leer .*json|guardar .*json|escribir .*json','Usa FileReader para leer y FileWriter con setPrettyPrinting() para guardar.',['fichero','filereader','filewriter']],
+   ['jpath','Consultas con JsonPath','jsonpath|jayway|xpath|filtro rapido','Sintaxis declarativa $[?(@.precio > 50)].nombre.',['jsonpath','jayway']]
+  ];
+  CON.forEach(function(c){c.re=new RegExp(c[2],'i'); c.kw=c[4];});
+
+  var TECH={
+   jdbc:/\b(sql|mysql|jdbc|tabla|tablas|select|insert|update|delete|where|join|clave (primaria|foranea|ajena)|ciclista|etapa|puerto|maillot|equipo|commit|rollback|transaccion|fechas|timestamp|salida)\b/g,
+   mongodb:/\b(mongo|mongodb|coleccion|colecciones|documento|documentos|find|aggregate|filters|concesionario|persona|personas|coche|coches|ventas|biblioteca|libros|socios|prestamos)\b/g,
+   json:/\b(json|gson|jsonpath|fichero|archivo|array|productos|platos|cocina|pojo|jsonparser|jsonobject|jsonarray)\b/g,
+   ejercicios:/\b(ejercicio|ejercicios|apartado|pregunta|r1|r2|r3|r4|r5|ampliacion)\b/g
+  };
+  var BASE={jdbc:'Plantilla: conexión',mongodb:'Imports + conexión',json:'Lectura rápida con org.json.simple',ejercicios:'r1 — Ciclistas de más de una edad'};
+
+  var blocks=[];
+  function refreshBlocks(){
+    blocks=[].slice.call(document.querySelectorAll('.block')).map(function(b){
+      var sec = b.closest('section');
+      var tab = sec ? sec.dataset.tab : 'jdbc';
+      var h2 = sec ? sec.querySelector('h2') : null;
+      var secTitle = h2 ? h2.childNodes[0].textContent.trim() : '';
+      var h3 = b.querySelector('h3');
+      var title = h3 ? h3.textContent.trim() : '';
+      return {el:b, tab:tab, sec:secTitle, title:title, head:N(b.dataset.head||''), all:N(b.dataset.search||'')};
+    });
+  }
+  refreshBlocks();
+
+  function goTo(b){
+    q.value=''; setTab(b.tab,true); b.el.classList.add('flash'); b.el.scrollIntoView();
+    setTimeout(function(){b.el.classList.remove('flash');},2200);
+  }
+  function rank(cons,part,tech){
+    var words=(part.match(/[a-z_]{5,}/g)||[]);
+    return blocks.map(function(b){
+      var s=(b.tab===tech || tech==='ejercicios') ? 2 : 0, hit=false;
+      cons.forEach(function(c){c.kw.forEach(function(k){
+        if(b.head.indexOf(k)!==-1){s+=3;hit=true;} else if(b.all.indexOf(k)!==-1){s+=1;hit=true;}
+      });});
+      words.forEach(function(w){ if(b.head.indexOf(w)!==-1){s+=2;hit=true;} });
+      return {b:b,s:hit?s:0};
+    }).filter(function(x){return x.s>=4 && x.b.title.indexOf('Checklist')!==0 && x.b.title.indexOf('pom.xml')!==0;})
+      .sort(function(a,b){return b.s-a.s;}).slice(0,3).map(function(x){return x.b;});
+  }
+  var STOP=['donde','cuando','mientras','despues','entonces','tambien','siempre','deben','debe','puede','pueden','dicho','dicha','estos','estas','estan','sobre','hasta','desde','cada','otro','otra','otros','otras','segun','ademas','todos','todas','mismo','misma','mismos','mismas','programa','ejercicio','enunciado','realiza','realizar','hacer'];
+  function searchBtn(words,panel,sbtn){
+    var btn=document.createElement('button'); btn.type='button'; btn.className='sv-go';
+    btn.textContent='🔍 Buscar "'+words+'"';
+    btn.onclick=function(){
+      panel.classList.remove('open'); sbtn.setAttribute('aria-expanded','false');
+      q.value=words; filtrar(); window.scrollTo(0,0); q.focus();
+    };
+    return btn;
+  }
+  function goBtn(b){
+    var btn=document.createElement('button'); btn.type='button'; btn.className='sv-go';
+    btn.innerHTML=esc(b.title.length>70?b.title.slice(0,68)+'…':b.title)+'<small>'+TABS[b.tab]+'</small>';
+    btn.onclick=function(){goTo(b);}; return btn;
+  }
+  function analizar(){
+    var raw=document.getElementById('sv-text').value.trim(), out=document.getElementById('sv-out');
+    out.innerHTML='';
+    if(!raw){out.textContent='Pega primero el enunciado.'; return;}
+    var n=N(raw), score={};
+    Object.keys(TECH).forEach(function(k){score[k]=(n.match(TECH[k])||[]).length;});
+    var order=Object.keys(score).sort(function(a,b){return score[b]-score[a];}), top=order[0];
+    var head=document.createElement('p'); head.className='sv-tech';
+    if(score[top]===0){head.textContent='No he reconocido la tecnologia con seguridad. Revisa el enunciado o prueba el buscador.';}
+    else{
+      head.innerHTML='Parece un ejercicio de <b>'+TABS[top]+'</b> <span style="color:var(--muted);font-weight:400">('+score[top]+' coincidencias)</span>'+(score[order[1]]>0&&score[order[1]]>=score[top]/2?' — tambien aparecen conceptos de '+TABS[order[1]]+'.':'.');
+    }
+    out.appendChild(head);
+    if(score[top]>0 && BASE[top]){
+      var base=blocks.filter(function(b){return b.tab===top && b.title.indexOf(BASE[top])===0;})[0];
+      if(base){var p=document.createElement('p'); p.textContent='Empieza por: '; p.style.margin='0 0 8px'; p.appendChild(goBtn(base)); out.appendChild(p);}
+    }
+    var parts=raw.split(/\n+/).reduce(function(a,l){return a.concat(l.split(/(?=\b[a-h][.)]\s)|(?=\b\d{1,2}[.)]\s)|(?=^[-•*]\s)/));},[])
+      .map(function(s){return s.replace(/^[-•*]\s*/,'').trim();}).filter(function(s){return s.length>12;});
+    if(!parts.length) parts=[raw];
+    parts.forEach(function(part,i){
+      var pn=N(part), cons=CON.filter(function(c){return c.re.test(pn);});
+      var div=document.createElement('div'); div.className='sv-part';
+      var bq=document.createElement('blockquote'); bq.textContent=part.length>200?part.slice(0,198)+'…':part; div.appendChild(bq);
+      if(!cons.length){
+        var m=document.createElement('p'); m.textContent='No he reconocido acciones clave en esta frase.'; div.appendChild(m);
+        var cand=(part.toLowerCase().match(/[a-zá-úñ_]{5,}/gi)||[]).filter(function(w){return STOP.indexOf(w)===-1;});
+        var uniq=cand.filter(function(w,i,a){return a.indexOf(w)===i;});
+        if(uniq.length){
+          var sugg=document.createElement('p'); sugg.style.margin='6px 0 0'; sugg.textContent='Buscar conceptos: ';
+          uniq.slice(0,3).forEach(function(w){sugg.appendChild(searchBtn(w,document.getElementById('solver'),document.getElementById('solveBtn')));});
+          div.appendChild(sugg);
+        }
+      } else {
+        var chips=document.createElement('div');
+        cons.forEach(function(c){
+          var sp=document.createElement('span'); sp.className='sv-chip'; sp.textContent=c[1];
+          chips.appendChild(sp);
+        });
+        div.appendChild(chips);
+        var tips=document.createElement('ul'); tips.className='sv-tips';
+        cons.forEach(function(c){
+          var li=document.createElement('li'); li.textContent=c[3]; tips.appendChild(li);
+        });
+        div.appendChild(tips);
+        var sugg=rank(cons,pn,top);
+        if(sugg.length){
+          var sp=document.createElement('p'); sp.style.margin='6px 0 2px'; sp.textContent='Bloques recomendados:'; div.appendChild(sp);
+          sugg.forEach(function(b){div.appendChild(goBtn(b));});
+        }
+      }
+      out.appendChild(div);
+    });
+  }
+
+  var sbtn=document.getElementById('solveBtn'), spanel=document.getElementById('solver');
+  sbtn.addEventListener('click',function(){
+    var open=spanel.classList.toggle('open');
+    sbtn.setAttribute('aria-expanded',open);
+    if(open) document.getElementById('sv-text').focus();
+  });
+  document.getElementById('sv-go').addEventListener('click',analizar);
+  document.getElementById('sv-clear').addEventListener('click',function(){
+    document.getElementById('sv-text').value=''; document.getElementById('sv-out').innerHTML=''; document.getElementById('sv-text').focus();
+  });
+  document.getElementById('sv-text').addEventListener('keydown',function(e){
+    if(e.key==='Enter' && (e.ctrlKey||e.metaKey)){e.preventDefault(); analizar();}
+  });
+
+  // Restaurar pestana guardada o hash de URL
+  var initialTab = (location.hash && location.hash.slice(1)) || localStorage.getItem('chuleta-tab') || 'jdbc';
+  if (!TABS[initialTab]) initialTab = 'jdbc';
+  setTab(initialTab, true);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,42 @@
+[
+  {
+    "_id": { "$oid": "652ae937d780d14d0193ff71" },
+    "id_venta": 1,
+    "id_persona": 1,
+    "id_car": 101,
+    "fechaVenta": "2022-03-15",
+    "precioVenta": 25000
+  },
+  {
+    "_id": { "$oid": "652ae937d780d14d0193ff72" },
+    "id_venta": 2,
+    "id_persona": 1,
+    "id_car": 108,
+    "fechaVenta": "2023-09-20",
+    "precioVenta": 22000
+  },
+  {
+    "_id": { "$oid": "652ae937d780d14d0193ff73" },
+    "id_venta": 3,
+    "id_persona": 2,
+    "id_car": 107,
+    "fechaVenta": "2021-06-10",
+    "precioVenta": 15000
+  },
+  {
+    "_id": { "$oid": "652ae937d780d14d0193ff74" },
+    "id_venta": 4,
+    "id_persona": 4,
+    "id_car": 104,
+    "fechaVenta": "2020-01-18",
+    "precioVenta": 20000
+  },
+  {
+    "_id": { "$oid": "652ae937d780d14d0193ff75" },
+    "id_venta": 5,
+    "id_persona": 5,
+    "id_car": 102,
+    "fechaVenta": "2024-05-11",
+    "precioVenta": 1900
+  }
+]

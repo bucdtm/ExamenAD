@@ -1,0 +1,52 @@
+[
+  {
+    "_id": { "$oid": "652ae937d780d14d0193ff61" },
+    "id_persona": 1,
+    "nombre": "María",
+    "apellidos": "López Martínez",
+    "City": "Madrid",
+    "edad": 34,
+    "dni": "12345678A",
+    "coches": [101, 108]
+  },
+  {
+    "_id": { "$oid": "652ae937d780d14d0193ff62" },
+    "id_persona": 2,
+    "nombre": "John",
+    "apellidos": "Smith",
+    "City": "London",
+    "edad": 45,
+    "dni": "87654321B",
+    "coches": [107]
+  },
+  {
+    "_id": { "$oid": "652ae937d780d14d0193ff63" },
+    "id_persona": 3,
+    "nombre": "Emma",
+    "apellidos": "Watson",
+    "City": "London",
+    "edad": 29,
+    "dni": "45678912C",
+    "coches": []
+  },
+  {
+    "_id": { "$oid": "652ae937d780d14d0193ff64" },
+    "id_persona": 4,
+    "nombre": "Antonio",
+    "apellidos": "García Pérez",
+    "City": "Valencia",
+    "edad": 50,
+    "dni": "78912345D",
+    "coches": [104]
+  },
+  {
+    "_id": { "$oid": "652ae937d780d14d0193ff65" },
+    "id_persona": 5,
+    "nombre": "Carlos",
+    "apellidos": "Fernández Gómez",
+    "City": "Madrid",
+    "edad": 40,
+    "dni": "65478901E",
+    "coches": [102]
+  }
+]
